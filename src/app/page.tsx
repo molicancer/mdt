@@ -8,7 +8,9 @@ import { FooterNav } from "@/components/home/FooterNav";
 import { HeaderNav } from "@/components/home/HeaderNav";
 import { HeroTitle } from "@/components/home/HeroTitle";
 import { InfoText } from "@/components/home/InfoText";
+import { SelectIssueHint } from "@/components/home/SelectIssueHint";
 import { VolNumberElements } from "@/components/home/VolNumberElements";
+import { BrowseButton } from "@/components/home/BrowseButton";
 import { useScrollAnimation } from "@/hooks/use-scroll-animation";
 
 export default function Home() {
@@ -19,7 +21,6 @@ export default function Home() {
   // 使用自定义滚动动画
   const {
     scrollProgress,
-    contentVisible,
     isScrolling,
     titleTransform,
     titleOpacity,
@@ -30,14 +31,15 @@ export default function Home() {
     dateOpacity,
     dateCurrentX
   } = useScrollAnimation(titleRef, {
-    scrollThreshold: 500,
-    showContentThreshold: 0.6,
-    hideContentThreshold: 0.3,
-    smoothUpdateFactor: 0.5
+    scrollThreshold: 1000,
+    showContentThreshold: 0.3,
+    hideContentThreshold: 0.15,
+    smoothUpdateFactor: 0.5,
+    extendedScrollThreshold: 1500
   });
 
   return (
-    <main className="min-h-screen overflow-x-hidden bg-white">
+    <main className="min-h-screen overflow-x-hidden bg-background">
       {/* 顶部导航 - 独立放置确保最高层级 */}
       <HeaderNav />
       
@@ -46,8 +48,14 @@ export default function Home() {
         {/* 中间区域 - 用于对齐 */}
         <div className="h-[88px]"></div> {/* 为HeaderNav留出空间 */}
         
-        {/* "Vol"和"54"标题 - 滚动时分别向左右两侧移动 */}
-        <div className="flex-1 flex items-center justify-center pointer-events-none">
+        {/* "Select the issue number"提示 - 固定在页面中间上方 */}
+        <div className="absolute top-[30%] left-1/2 transform -translate-x-1/2 pointer-events-none">
+          <SelectIssueHint scrollProgress={scrollProgress} />
+        </div>
+        
+        {/* "Vol"和"54"标题 - 滚动时分别向左右两侧移动，放置在页面正中间 */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none" 
+             style={{ top: '40%', transform: 'translateY(-50%)' }}>
           <VolNumberElements
             volTransform={volTransform}
             numberTransform={numberTransform}
@@ -56,16 +64,22 @@ export default function Home() {
             dateOpacity={dateOpacity}
           />
         </div>
-
-        {/* 信息文本区域 */}
-        <InfoText textOpacity={textOpacity} scrollProgress={scrollProgress} />
-
-        {/* 底部提示 - 固定在底部 */}
+      </div>
+      
+      {/* 底部提示 - 固定在底部，在一开始可见，滚动后消失 */}
+      <div className="fixed bottom-0 left-0 w-full z-31 transition-opacity duration-500"
+           style={{ opacity: scrollProgress < 0.1 ? 1 : 0 }}>
         <FooterNav />
       </div>
 
       {/* 模糊遮罩 - 在Vol和54之上，在Header之下 */}
       <BlurMasks />
+      
+      {/* 浏览按钮 - 独立层级，保证在最上层，与HeaderNav同级，距离底部80px */}
+      <div className="fixed left-0 w-full z-[100] pointer-events-auto"
+           style={{ bottom: '80px' }}>
+        <BrowseButton scrollProgress={scrollProgress} />
+      </div>
 
       {/* 返回顶部按钮 */}
       <BackToTopButton scrollProgress={scrollProgress} titleRef={titleRef} />
@@ -73,7 +87,7 @@ export default function Home() {
       {/* 可滚动的内容区域 */}
       <div className="min-h-screen flex flex-col">
         {/* 大标题区域 - 垂直居中 */}
-        <div className="flex flex-col items-center justify-center min-h-screen">
+        <div className="flex flex-col items-center justify-center min-h-screen relative">
           <div className="max-w-4xl">
             {/* 大标题 */}
             <HeroTitle
@@ -84,15 +98,31 @@ export default function Home() {
             />
           </div>
         </div>
-
-        {/* 中间内容区域 - 滚动后显示 */}
-        <ContentSection 
-          ref={contentRef}
-          contentVisible={contentVisible}
-        />
         
-        {/* 额外的滚动空间 */}
-        <div className="h-[30vh]"></div>
+        {/* 信息文本区域 - 位于大标题初始位置的下方，固定位置，只淡出不移动 */}
+        <div className="fixed left-0 w-full flex justify-center" style={{ top: 'calc(50vh + 110px)' }}>
+          <div className="max-w-4xl">
+            <InfoText textOpacity={textOpacity} scrollProgress={scrollProgress} />
+          </div>
+        </div>
+
+        {/* 中间内容区域 - 设置为固定位置，正好在大图标初始位置的顶部 */}
+        <div className="fixed left-0 w-full z-10 pointer-events-auto"
+             style={{ 
+               top: 'calc(50vh - 220px)',
+               opacity: scrollProgress > 0.2 ? 1 : 0, 
+               transition: 'opacity 0.7s ease',
+               pointerEvents: scrollProgress > 0.2 ? 'auto' : 'none' 
+             }}>
+          <ContentSection 
+            ref={contentRef}
+            contentVisible={true}
+            scrollProgress={scrollProgress}
+          />
+        </div>
+        
+        {/* 额外的内容空间 - 使页面可滚动 */}
+        <div className="h-[150vh]"></div>
       </div>
     </main>
   );

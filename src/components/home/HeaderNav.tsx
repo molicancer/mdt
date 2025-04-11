@@ -24,10 +24,12 @@ export function HeaderNav() {
       </div>
       
       {/* 右侧按钮 */}
-      <div className="flex items-center gap-4 justify-end">
-        <ModeToggle />
+      <div className="flex items-center gap-4 justify-end pointer-events-auto" style={{ zIndex: 1000 }}>
+        <div className="relative z-[1001] pointer-events-auto">
+          <ModeToggle />
+        </div>
         <Link href="/subscribe">
-          <button className="bg-black text-white border border-white rounded-full px-6 py-2 font-medium hover:bg-white hover:text-black transition-colors duration-300">
+          <button className="bg-primary text-primary-foreground border border-border rounded-full px-6 py-2 font-medium hover:bg-background hover:text-foreground transition-colors duration-300">
             Subscribe
           </button>
         </Link>

@@ -152,6 +152,7 @@
   }
   body {
     @apply bg-background text-foreground;
+    transition: color 0.3s ease, background-color 0.3s ease;
   }
 }
 
@@ -243,7 +244,7 @@
 .dark .blur-mask-bottom,
 .dark .blur-mask-left,
 .dark .blur-mask-right {
-  background-color: rgba(0, 0, 0, 0.7);
+  background-color: rgba(20, 20, 20, 0.7);
 }
 
 /* 内容渐入效果 */

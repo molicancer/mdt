@@ -8,6 +8,7 @@ interface ScrollAnimationConfig {
   showContentThreshold?: number; // 显示内容的阈值
   hideContentThreshold?: number; // 隐藏内容的阈值
   smoothUpdateFactor?: number; // 平滑更新因子
+  extendedScrollThreshold?: number; // 扩展滚动阈值，用于支持更长的滚动范围
 }
 
 interface ScrollAnimationState {
@@ -23,6 +24,7 @@ interface ScrollAnimationState {
   elementsOpacity: number; // 元素透明度
   dateOpacity: number; // 日期透明度
   dateCurrentX: number; // 日期当前X位置
+  extendedScrollProgress: number; // 扩展滚动进度，支持更大范围（0-1+）
 }
 
 export function useScrollAnimation(
@@ -35,6 +37,7 @@ export function useScrollAnimation(
     showContentThreshold = 0.6,
     hideContentThreshold = 0.3,
     smoothUpdateFactor = 0.5,
+    extendedScrollThreshold = 1000,
   } = config;
 
   // 状态
@@ -120,16 +123,22 @@ export function useScrollAnimation(
         setIsScrolling(false);
         
         // 如果滚动进度在中间位置，自动完成动画
-        if (progress > 0.1 && progress < 0.6) {
-          // 自动滚动到适当位置
+        if (progress > 0.1 && progress < 0.3) {
+          // 自动滚动到第一阶段结束位置
           window.scrollTo({
-            top: progress > 0.3 ? scrollThreshold : 0,
+            top: scrollThreshold * 0.2,
             behavior: 'smooth'
           });
-        } else if (progress > 0.6 && progress < 0.9) {
-          // 如果在内容区域但没完全滚动，自动滚动到内容
+        } else if (progress >= 0.3 && progress < 0.5) {
+          // 停留在第二阶段
           window.scrollTo({
-            top: scrollThreshold,
+            top: scrollThreshold * 0.4,
+            behavior: 'smooth'
+          });
+        } else if (progress >= 0.5 && progress < 0.8) {
+          // 自动滚动到第三阶段
+          window.scrollTo({
+            top: scrollThreshold * 0.6,
             behavior: 'smooth'
           });
         } else if (progress < 0.05) {
@@ -159,20 +168,67 @@ export function useScrollAnimation(
   // 处理鼠标滚轮事件，实现更好的swipe效果
   useEffect(() => {
     const handleWheel = (e: WheelEvent) => {
+      // 如果处于第一阶段和第二阶段之间的过渡区域
+      if (scrollProgress > 0.15 && scrollProgress < 0.25) {
+        // 减缓滚动速度，创造阻尼感
+        e.preventDefault();
+        
+        // 向下滚动，进入第二阶段
+        if (e.deltaY > 0 && e.deltaY > 30) {
+          window.scrollTo({
+            top: scrollThreshold * 0.4, // 直接滚动到第二阶段中心
+            behavior: 'smooth'
+          });
+        } 
+        // 向上滚动，回到第一阶段
+        else if (e.deltaY < 0 && e.deltaY < -30) {
+          window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+          });
+        }
+      }
+      
+      // 如果处于第二阶段和第三阶段之间的过渡区域
+      else if (scrollProgress > 0.45 && scrollProgress < 0.55) {
+        e.preventDefault();
+        
+        // 向下滚动，进入第三阶段
+        if (e.deltaY > 0 && e.deltaY > 30) {
+          window.scrollTo({
+            top: scrollThreshold * 0.6, // 仅滚动到第三阶段的开始
+            behavior: 'smooth'
+          });
+        } 
+        // 向上滚动，回到第二阶段
+        else if (e.deltaY < 0 && e.deltaY < -30) {
+          window.scrollTo({
+            top: scrollThreshold * 0.4, // 回到第二阶段中心
+            behavior: 'smooth'
+          });
+        }
+      }
+      
       // 处理起始状态的向下滚动
-      if (scrollProgress < 0.1 && e.deltaY > 0) {
+      else if (scrollProgress < 0.1 && e.deltaY > 0) {
         e.preventDefault();
         window.scrollTo({
-          top: scrollThreshold, // 直接滚动到目标位置
+          top: scrollThreshold * 0.4, // 直接滚动到第二阶段
           behavior: 'smooth'
         });
       }
       
+      // 处理滚动到第三阶段后的行为，阻止继续滚动
+      else if (scrollProgress > 0.6 && e.deltaY > 0) {
+        // 阻止继续向下滚动
+        e.preventDefault();
+      }
+      
       // 处理已滚动状态的向上滚动
-      if (scrollProgress > 0.6 && e.deltaY < 0) {
+      else if (scrollProgress > 0.6 && e.deltaY < 0) {
         e.preventDefault();
         window.scrollTo({
-          top: 0, // 回到顶部
+          top: scrollThreshold * 0.4, // 回到第二阶段
           behavior: 'smooth'
         });
       }
@@ -200,22 +256,77 @@ export function useScrollAnimation(
     
     const handleTouchEnd = () => {
       const diff = touchEndY - touchStartY;
-      const threshold = 50; // 设置较小的阈值，提高灵敏度
+      const threshold = 30; // 设置较小的阈值，提高灵敏度
       
-      // 向上滑动
-      if (diff < -threshold && scrollProgress < 0.3) {
-        window.scrollTo({
-          top: scrollThreshold,
-          behavior: 'smooth'
-        });
+      // 根据当前滚动位置和滑动方向决定目标位置
+      
+      // 第一阶段
+      if (scrollProgress < 0.15) {
+        // 向上滑动(第一阶段 -> 第二阶段)
+        if (diff < -threshold) {
+          window.scrollTo({
+            top: scrollThreshold * 0.4, // 滚动到第二阶段中心
+            behavior: 'smooth'
+          });
+        }
+      } 
+      // 第一和第二阶段之间
+      else if (scrollProgress >= 0.15 && scrollProgress < 0.25) {
+        if (diff < -threshold) {
+          // 向上滑动(进入第二阶段)
+          window.scrollTo({
+            top: scrollThreshold * 0.4,
+            behavior: 'smooth'
+          });
+        } else if (diff > threshold) {
+          // 向下滑动(回到第一阶段)
+          window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+          });
+        }
       }
-      
-      // 向下滑动
-      if (diff > threshold && scrollProgress > 0.3) {
-        window.scrollTo({
-          top: 0,
-          behavior: 'smooth'
-        });
+      // 第二阶段
+      else if (scrollProgress >= 0.25 && scrollProgress < 0.45) {
+        if (diff < -threshold) {
+          // 向上滑动(第二阶段 -> 第三阶段)
+          window.scrollTo({
+            top: scrollThreshold * 0.6,
+            behavior: 'smooth'
+          });
+        } else if (diff > threshold) {
+          // 向下滑动(第二阶段 -> 第一阶段)
+          window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+          });
+        }
+      }
+      // 第二和第三阶段之间
+      else if (scrollProgress >= 0.45 && scrollProgress < 0.55) {
+        if (diff < -threshold) {
+          // 向上滑动(进入第三阶段)
+          window.scrollTo({
+            top: scrollThreshold * 0.6,
+            behavior: 'smooth'
+          });
+        } else if (diff > threshold) {
+          // 向下滑动(回到第二阶段)
+          window.scrollTo({
+            top: scrollThreshold * 0.4,
+            behavior: 'smooth'
+          });
+        }
+      }
+      // 第三阶段
+      else if (scrollProgress >= 0.55) {
+        // 向下滑动(第三阶段 -> 第二阶段)
+        if (diff > threshold) {
+          window.scrollTo({
+            top: scrollThreshold * 0.4, // 滚动到第二阶段
+            behavior: 'smooth'
+          });
+        }
       }
     };
     
@@ -231,26 +342,28 @@ export function useScrollAnimation(
   }, [scrollProgress, scrollThreshold]);
 
   // 计算标题位置的偏移量
-  const titleTransform = scrollProgress < 0.05 ? 0 : 220 * easeOutExpo(scrollProgress);
+  const titleTransform = scrollProgress < 0.05 ? 0 : 250 * easeOutExpo(scrollProgress);
   
   // 计算标题和说明文字的透明度
-  const titleOpacity = Math.max(1 - scrollProgress * 1.8, 0);
+  const titleOpacity = Math.max(1 - scrollProgress * 3, 0);
   const textOpacity = scrollProgress < 0.05 ? 1 : Math.max(1 - scrollProgress * 3, 0);
   
-  // 计算Vol和54的位移量，使用线性动画
-  const volTransform = scrollProgress * moveDistance;
-  const numberTransform = scrollProgress * moveDistance;
+  // 计算Vol和54的位移量，使用非线性动画，在第一阶段迅速完成移动
+  const progressRatio = Math.min(scrollProgress / 0.2, 1); // 0.2的进度内完成全部移动
+  const volTransform = moveDistance * progressRatio;
+  const numberTransform = moveDistance * progressRatio;
   
-  // 计算Vol和54的透明度
-  const elementsOpacity = Math.min(scrollProgress * 1.2, 1);
+  // 计算Vol和54的透明度，与移动同步
+  const elementsOpacity = Math.min(progressRatio * 1.2, 1);
   
-  // 计算日期文本的透明度
-  const dateOpacity = scrollProgress < dateOpacityStart ? 0 :
-                     scrollProgress > dateOpacityEnd ? 1 :
-                     (scrollProgress - dateOpacityStart) / (dateOpacityEnd - dateOpacityStart);
+  // 计算日期文本的透明度，在第一阶段与Vol和54同步显示
+  const dateOpacity = Math.min(progressRatio, 1);
   
-  // 计算日期文本的位置
-  const dateCurrentX = dateInitialX + (dateFinalX - dateInitialX) * scrollProgress;
+  // 计算日期文本的位置，同样在第一阶段完成移动
+  const dateCurrentX = dateInitialX + (dateFinalX - dateInitialX) * progressRatio;
+
+  // 计算扩展滚动进度
+  const extendedScrollProgress = scrollProgress > 1 ? 1 : scrollProgress;
 
   return {
     scrollY,
@@ -264,6 +377,7 @@ export function useScrollAnimation(
     numberTransform,
     elementsOpacity,
     dateOpacity,
-    dateCurrentX
+    dateCurrentX,
+    extendedScrollProgress
   };
 } 
