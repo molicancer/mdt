@@ -1,103 +1,99 @@
-import Image from "next/image";
+"use client";
+
+import { useRef } from "react";
+import { BlurMasks } from "@/components/home/BlurMasks";
+import { BackToTopButton } from "@/components/home/BackToTopButton";
+import { ContentSection } from "@/components/home/ContentSection";
+import { FooterNav } from "@/components/home/FooterNav";
+import { HeaderNav } from "@/components/home/HeaderNav";
+import { HeroTitle } from "@/components/home/HeroTitle";
+import { InfoText } from "@/components/home/InfoText";
+import { VolNumberElements } from "@/components/home/VolNumberElements";
+import { useScrollAnimation } from "@/hooks/use-scroll-animation";
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  // 创建引用
+  const titleRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  
+  // 使用自定义滚动动画
+  const {
+    scrollProgress,
+    contentVisible,
+    isScrolling,
+    titleTransform,
+    titleOpacity,
+    textOpacity,
+    volTransform,
+    numberTransform,
+    elementsOpacity,
+    dateOpacity,
+    dateCurrentX
+  } = useScrollAnimation(titleRef, {
+    scrollThreshold: 500,
+    showContentThreshold: 0.6,
+    hideContentThreshold: 0.3,
+    smoothUpdateFactor: 0.5
+  });
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  return (
+    <main className="min-h-screen overflow-x-hidden bg-white">
+      {/* 顶部导航 - 独立放置确保最高层级 */}
+      <HeaderNav />
+      
+      {/* 固定的页面结构 - 包含除顶部导航外的所有元素 */}
+      <div className="fixed inset-0 flex flex-col z-20 pointer-events-none">
+        {/* 中间区域 - 用于对齐 */}
+        <div className="h-[88px]"></div> {/* 为HeaderNav留出空间 */}
+        
+        {/* "Vol"和"54"标题 - 滚动时分别向左右两侧移动 */}
+        <div className="flex-1 flex items-center justify-center pointer-events-none">
+          <VolNumberElements
+            volTransform={volTransform}
+            numberTransform={numberTransform}
+            elementsOpacity={elementsOpacity}
+            dateCurrentX={dateCurrentX}
+            dateOpacity={dateOpacity}
+          />
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+
+        {/* 信息文本区域 */}
+        <InfoText textOpacity={textOpacity} scrollProgress={scrollProgress} />
+
+        {/* 底部提示 - 固定在底部 */}
+        <FooterNav />
+      </div>
+
+      {/* 模糊遮罩 - 在Vol和54之上，在Header之下 */}
+      <BlurMasks />
+
+      {/* 返回顶部按钮 */}
+      <BackToTopButton scrollProgress={scrollProgress} titleRef={titleRef} />
+
+      {/* 可滚动的内容区域 */}
+      <div className="min-h-screen flex flex-col">
+        {/* 大标题区域 - 垂直居中 */}
+        <div className="flex flex-col items-center justify-center min-h-screen">
+          <div className="max-w-4xl">
+            {/* 大标题 */}
+            <HeroTitle
+              ref={titleRef}
+              titleTransform={titleTransform}
+              titleOpacity={titleOpacity}
+              isScrolling={isScrolling}
+            />
+          </div>
+        </div>
+
+        {/* 中间内容区域 - 滚动后显示 */}
+        <ContentSection 
+          ref={contentRef}
+          contentVisible={contentVisible}
+        />
+        
+        {/* 额外的滚动空间 */}
+        <div className="h-[30vh]"></div>
+      </div>
+    </main>
   );
 }

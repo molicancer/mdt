@@ -1,0 +1,151 @@
+/* 
+ * NewYork 字体定义
+ * 基于图像中看到的NewYork字体变体名称
+ */
+
+/* Extra Large 变体 */
+@font-face {
+  font-family: 'NewYork';
+  src: url('/fonts/NewYorkExtraLarge-Regular.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'NewYork';
+  src: url('/fonts/NewYorkExtraLarge-Black.otf') format('opentype');
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'NewYork';
+  src: url('/fonts/NewYorkExtraLarge-Bold.otf') format('opentype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'NewYork';
+  src: url('/fonts/NewYorkExtraLarge-Heavy.otf') format('opentype');
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'NewYork';
+  src: url('/fonts/NewYorkExtraLarge-Medium.otf') format('opentype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'NewYork';
+  src: url('/fonts/NewYorkExtraLarge-Semibold.otf') format('opentype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Large 变体 */
+@font-face {
+  font-family: 'NewYorkLarge';
+  src: url('/fonts/NewYorkLarge-Regular.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'NewYorkLarge';
+  src: url('/fonts/NewYorkLarge-Medium.otf') format('opentype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'NewYorkLarge';
+  src: url('/fonts/NewYorkLarge-Semibold.otf') format('opentype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Medium 变体 */
+@font-face {
+  font-family: 'NewYorkMedium';
+  src: url('/fonts/NewYorkMedium-Regular.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'NewYorkMedium';
+  src: url('/fonts/NewYorkMedium-Bold.otf') format('opentype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'NewYorkMedium';
+  src: url('/fonts/NewYorkMedium-Heavy.otf') format('opentype');
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'NewYorkMedium';
+  src: url('/fonts/NewYorkMedium-Medium.otf') format('opentype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Small 变体 */
+@font-face {
+  font-family: 'NewYorkSmall';
+  src: url('/fonts/NewYorkSmall-Regular.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'NewYorkSmall';
+  src: url('/fonts/NewYorkSmall-Bold.otf') format('opentype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'NewYorkSmall';
+  src: url('/fonts/NewYorkSmall-Medium.otf') format('opentype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* 使用示例:
+ * font-family: 'NewYork'; - 使用ExtraLarge变体
+ * font-family: 'NewYorkLarge'; - 使用Large变体 
+ * font-family: 'NewYorkMedium'; - 使用Medium变体
+ * font-family: 'NewYorkSmall'; - 使用Small变体
+ */
+
+/* 定义CSS变量，方便在整个应用中使用 */
+:root {
+  --font-newyork: 'NewYork', serif;
+  --font-newyork-large: 'NewYorkLarge', serif;
+  --font-newyork-medium: 'NewYorkMedium', serif;
+  --font-newyork-small: 'NewYorkSmall', serif;
+} 
