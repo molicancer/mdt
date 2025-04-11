@@ -50,31 +50,32 @@ interface ContentSectionProps {
   contentVisible: boolean;
   scrollProgress: number;
   activeIssue?: number; // 当前选中的期数
+  browseMode?: boolean; // 是否处于浏览模式
 }
 
 export const ContentSection = forwardRef<HTMLDivElement, ContentSectionProps>(
-  function ContentSection({ scrollProgress, activeIssue = 54 }, ref) {
+  function ContentSection({ scrollProgress, activeIssue = 54, browseMode = false }, ref) {
     // 状态: 当前内容
     const [currentContent, setCurrentContent] = useState<IssueContent | null>(null);
     const [prevContent, setPrevContent] = useState<IssueContent | null>(null);
     const [isTransitioning, setIsTransitioning] = useState(false);
     
+    // 鼠标悬停状态，用于判断是否显示第三阶段
+    const [isHovered, setIsHovered] = useState(false);
+    
     // 计算动画阶段
     // 阶段1: 初始状态，scrollProgress < 0.2
     // 阶段2: 中间停留状态，0.2 < scrollProgress < 0.5
-    // 阶段3: 文字融入红色区域，scrollProgress > 0.5
+    // 阶段3: 文字融入红色区域，isHovered = true
     
     // 中间状态的内容显示
     const initialOpacity = Math.min((scrollProgress - 0.2) * 5, 1);
     
-    // 第三阶段进度
-    const phase3Progress = Math.max(scrollProgress - 0.5, 0) / 0.3; // 阶段3进度百分比(0-1)，0.3的范围内完成动画
+    // 判断当前处于哪个阶段 - 由鼠标悬停决定
+    const isPhase3 = isHovered;
     
-    // 计算文字向上移动的距离，阶段3才开始移动
-    const textTransform = Math.min(120 * phase3Progress, 120); // 最大移动120px
-    
-    // 判断当前处于哪个阶段
-    const isPhase3 = scrollProgress >= 0.5;
+    // 计算颜色区域的高度 - 悬停时增加高度以包含文本
+    const colorBlockHeight = isHovered ? 450 : 300; // 单位: px，悬停时高度更高以确保包含全部文本
     
     // 内容淡入淡出动画状态
     const [contentFadeState, setContentFadeState] = useState("visible"); // "fading-out", "fading-in", "visible"
@@ -181,91 +182,189 @@ export const ContentSection = forwardRef<HTMLDivElement, ContentSectionProps>(
       }
     };
     
+    // 处理鼠标事件
+    const handleMouseEnter = () => {
+      console.log("鼠标进入颜色区域", isHovered);
+      setIsHovered(true);
+    };
+    
+    const handleMouseLeave = () => {
+      console.log("鼠标离开颜色区域", isHovered);
+      setIsHovered(false);
+    };
+    
     return (
       <div ref={ref} className="relative">
-        {/* 颜色区域 - 当期数变化时使用动画过渡 */}
-        <div className="w-full flex justify-center transition-all duration-700">
+        {/* 颜色区域整体容器 - 浏览模式下隐藏 */}
+        <div 
+          className="w-full flex justify-center transition-all duration-700 relative"
+          style={{ 
+            opacity: browseMode ? 0 : 1,
+            visibility: browseMode ? 'hidden' : 'visible',
+            transitionProperty: 'opacity, visibility',
+            transitionDuration: '0.7s, 0s',
+            transitionDelay: '0s, ' + (browseMode ? '0.7s' : '0s')
+          }}
+        >
+          {/* 主颜色区域 - 鼠标悬停变化的核心区域 */}
           <div 
-            className="rounded-lg w-full max-w-md relative overflow-hidden"
+            className="rounded-lg w-full max-w-md cursor-pointer relative"
             style={{ 
-              height: '300px', // 固定高度
+              height: `${colorBlockHeight}px`, // 动态高度
               backgroundColor: currentContent.color,
-              transition: 'background-color 0.7s ease'
+              transitionProperty: 'background-color, height',
+              transitionDuration: '0.7s, 0.7s',
+              transitionTimingFunction: 'ease, ease-in-out',
             }}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
           >
             {/* 过渡层 - 仅在切换期数时显示 */}
             {isTransitioning && prevContent && (
               <div 
-                className="absolute inset-0"
+                className="absolute inset-0 pointer-events-none"
                 style={{
                   backgroundColor: prevContent.color,
                   opacity: contentFadeState === "fading-out" ? 1 : 0,
-                  transition: 'opacity 0.5s ease',
+                  transitionProperty: 'opacity',
+                  transitionDuration: '0.5s',
+                  transitionTimingFunction: 'ease',
                   zIndex: 1
                 }}
               />
             )}
-            
-            {/* 图标 - 随期数变化时有淡入淡出效果 */}
+          </div>
+        </div>
+        
+        {/* 图标部分 - 与颜色区域分离，以便在浏览模式下保持可见 */}
+        <div 
+          className={`${browseMode ? 'fixed inset-x-0 z-30' : 'absolute left-0 w-full'} flex justify-center pointer-events-none`}
+          style={{ 
+            top: browseMode ? '50%' : '0',
+            transform: browseMode ? 'translateY(-50%)' : 'translateY(0)',
+            opacity: contentFadeState === "visible" ? 1 : contentOpacity,
+            transitionProperty: 'top, opacity, transform',
+            transitionDuration: '0.5s, 0.5s, 0.5s',
+            transitionTimingFunction: 'ease-in-out, ease, ease-in-out',
+          }}
+        >
+          <div 
+            className={`w-full max-w-md flex items-center justify-center`}
+            style={{ 
+              height: browseMode ? '150px' : '300px',
+              opacity: contentFadeState === "visible" ? (isPhase3 && !browseMode ? 0.2 : 1) : contentOpacity,
+              transitionProperty: 'opacity, height',
+              transitionDuration: '0.5s, 0.7s',
+              transitionTimingFunction: 'ease, ease-in-out'
+            }}
+          >
             <div 
-              className="w-full h-full flex items-center justify-center p-8 absolute top-0 left-0"
-              style={{ 
-                opacity: contentFadeState === "visible" ? (isPhase3 ? Math.max(1 - phase3Progress * 0.8, 0.2) : 1) : contentOpacity,
-                transition: 'opacity 0.5s ease'
+              className="transition-all duration-500"
+              style={{
+                transform: browseMode ? 'scale(0.7)' : 'scale(1)',
+                transitionProperty: 'transform',
+                transitionDuration: '0.7s',
+                transitionTimingFunction: 'ease-in-out'
               }}
             >
-              <div className="transition-all duration-500">
-                {renderIcon(currentContent.icon)}
-              </div>
+              {renderIcon(currentContent.icon)}
             </div>
           </div>
         </div>
         
-        {/* 文章标题和摘要 */}
-        {isPhase3 ? (
-          // 第三阶段：文字移入区域内
-          <div 
-            className="w-full px-6 flex flex-col items-center justify-center transition-all duration-700 absolute z-10"
-            style={{ 
-              transform: `translateY(-${300 + textTransform}px)`,
-              opacity: contentFadeState === "visible" ? initialOpacity : contentOpacity,
-              transition: 'transform 0.7s ease, opacity 0.5s ease'
-            }}
-          >
-            <div className="w-full max-w-2xl text-center transition-all duration-500">
-              <div className="mb-3 text-sm font-medium transition-all duration-500">这周有什么新鲜事 👀 ?</div>
-              <h3 className="text-3xl font-newyork font-bold mb-1 transition-all duration-500">{currentContent.title}</h3>
-              <p className="text-xl font-newyork text-gray-700 mb-4 transition-all duration-500">{currentContent.subtitle}</p>
-              <div className={`space-y-1 text-center transition-all duration-500 ${phase3Progress > 0.3 ? 'opacity-100' : 'opacity-0'}`}>
+        {/* 文字内容 - 浏览模式下隐藏 */}
+        <div 
+          className="absolute w-full pointer-events-none"
+          style={{ 
+            top: isHovered ? '0' : '340px',
+            opacity: browseMode ? 0 : (contentFadeState === "visible" ? initialOpacity : contentOpacity),
+            visibility: browseMode ? 'hidden' : 'visible',
+            transitionProperty: 'top, opacity, visibility',
+            transitionDuration: '0.7s, 0.5s, 0s',
+            transitionTimingFunction: 'ease-in-out, ease, linear',
+            transitionDelay: '0s, 0s, ' + (browseMode ? '0.5s' : '0s'),
+            zIndex: isHovered ? 10 : 1
+          }}
+        >
+          <div className="flex justify-center">
+            <div className="w-full max-w-md text-center">
+              <div 
+                className="mb-3 text-sm font-medium transition-all duration-500"
+                style={{ 
+                  transitionDelay: '0.05s',
+                  transitionProperty: 'transform',
+                  transitionDuration: '0.7s',
+                  transitionTimingFunction: 'ease-in-out',
+                  transform: isHovered ? 'translateY(150px)' : 'translateY(0)'
+                }}
+              >
+                这周有什么新鲜事 👀 ?
+              </div>
+              <h3 
+                className="text-3xl font-newyork font-bold mb-1 transition-all duration-500"
+                style={{ 
+                  transitionDelay: '0.1s',
+                  transitionProperty: 'transform',
+                  transitionDuration: '0.7s',
+                  transitionTimingFunction: 'ease-in-out',
+                  transform: isHovered ? 'translateY(150px)' : 'translateY(0)'
+                }}
+              >
+                {currentContent.title}
+              </h3>
+              <p 
+                className="text-xl font-newyork text-gray-700 mb-4 transition-all duration-500"
+                style={{ 
+                  transitionDelay: '0.15s',
+                  transitionProperty: 'transform',
+                  transitionDuration: '0.7s',
+                  transitionTimingFunction: 'ease-in-out',
+                  transform: isHovered ? 'translateY(150px)' : 'translateY(0)'
+                }}
+              >
+                {currentContent.subtitle}
+              </p>
+              <div 
+                className="space-y-1 text-center"
+                style={{
+                  opacity: isHovered ? 1 : 0,
+                  transform: isHovered ? 'translateY(150px)' : 'translateY(50px)',
+                  transitionProperty: 'opacity, transform',
+                  transitionDuration: '0.5s, 0.7s',
+                  transitionTimingFunction: 'ease, ease-in-out'
+                }}
+              >
                 {currentContent.items.map((item, index) => (
-                  <p key={index} className="text-base transition-all duration-500" 
+                  <p 
+                    key={index} 
+                    className="text-base transition-all duration-500" 
                     style={{ 
-                      transitionDelay: `${index * 0.05}s`,
-                      opacity: phase3Progress > 0.3 + (index * 0.05) ? 1 : 0
-                    }}>
+                      transitionDelay: `${0.2 + index * 0.05}s`,
+                      transitionProperty: 'all',
+                      transitionDuration: '0.7s',
+                      transitionTimingFunction: 'ease-in-out'
+                    }}
+                  >
                     {item}
                   </p>
                 ))}
                 {currentContent.author && (
-                  <p className="text-base text-gray-600 mt-2 transition-all duration-500 opacity-70">{currentContent.author}</p>
+                  <p 
+                    className="text-base text-gray-600 mt-4 opacity-70 transition-all duration-500"
+                    style={{
+                      transitionDelay: `${0.2 + currentContent.items.length * 0.05 + 0.1}s`,
+                      transitionProperty: 'all',
+                      transitionDuration: '0.7s',
+                      transitionTimingFunction: 'ease-in-out'
+                    }}
+                  >
+                    {currentContent.author}
+                  </p>
                 )}
               </div>
             </div>
           </div>
-        ) : (
-          // 第二阶段：文字显示在区域下方
-          <div 
-            className="w-full mt-14 text-center transition-all duration-500"
-            style={{ 
-              opacity: contentFadeState === "visible" ? initialOpacity : contentOpacity,
-              transition: 'opacity 0.5s ease'
-            }}
-          >
-            <div className="mb-3 text-sm font-semibold">这周有什么新鲜事 👀 ?</div>
-            <h3 className="text-3xl font-newyork font-bold mb-1 transition-all duration-500">{currentContent.title}</h3>
-            <p className="text-xl font-newyork text-gray-700 mb-4 transition-all duration-500">{currentContent.subtitle}</p>
-          </div>
-        )}
+        </div>
       </div>
     );
   }

@@ -3,11 +3,15 @@ import { FunctionComponent } from "react";
 interface BrowseButtonProps {
   scrollProgress: number;
   activeIssue?: number;
+  browseMode?: boolean;
+  onBrowseClick?: () => void;
 }
 
 export const BrowseButton: FunctionComponent<BrowseButtonProps> = ({ 
   scrollProgress,
-  activeIssue = 54
+  activeIssue = 54,
+  browseMode = false,
+  onBrowseClick
 }) => {
   // 获取按钮可见度 (滚动到第二阶段后才显示)
   const buttonOpacity = Math.min(Math.max((scrollProgress - 0.3) * 5, 0), 1);
@@ -19,8 +23,9 @@ export const BrowseButton: FunctionComponent<BrowseButtonProps> = ({
       <button 
         className="text-white bg-black hover:bg-gray-800 transition-all duration-300 rounded-full px-12 py-4 font-medium"
         style={{ opacity: buttonOpacity }}
+        onClick={onBrowseClick}
       >
-        浏览 Vol {activeIssue}
+        {browseMode ? "返回" : `浏览 Vol ${activeIssue}`}
       </button>
     </div>
   );

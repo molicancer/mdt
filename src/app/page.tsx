@@ -18,6 +18,9 @@ export default function Home() {
   const titleRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   
+  // 浏览模式状态
+  const [browseMode, setBrowseMode] = useState(false);
+  
   // 使用自定义滚动动画
   const {
     scrollProgress,
@@ -45,6 +48,11 @@ export default function Home() {
     console.log(`切换到期数: ${issueNumber}`);
     setActiveIssue(issueNumber);
   };
+  
+  // 处理浏览按钮点击
+  const handleBrowseClick = () => {
+    setBrowseMode(!browseMode);
+  };
 
   return (
     <main className="min-h-screen overflow-x-hidden bg-background">
@@ -57,13 +65,19 @@ export default function Home() {
         <div className="h-[88px]"></div> {/* 为HeaderNav留出空间 */}
         
         {/* "Select the issue number"提示 - 固定在页面中间上方 */}
-        <div className="absolute top-[30%] left-1/2 transform -translate-x-1/2 pointer-events-none">
+        <div className="absolute top-[30%] left-1/2 transform -translate-x-1/2 pointer-events-none"
+             style={{ opacity: browseMode ? 0 : 1, transition: 'opacity 0.5s ease' }}>
           <SelectIssueHint scrollProgress={scrollProgress} />
         </div>
         
         {/* "Vol"和"54"标题 - 滚动时分别向左右两侧移动，放置在页面正中间 */}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-auto" 
-             style={{ top: '40%', transform: 'translateY(-50%)' }}>
+             style={{ 
+               top: browseMode ? '50%' : '40%', 
+               transform: browseMode ? 'translateY(-50%)' : 'translateY(0)', 
+               transition: 'top 0.7s ease-in-out, transform 0.7s ease-in-out',
+               height: 'auto'
+             }}>
           <VolNumberElements
             volTransform={volTransform}
             numberTransform={numberTransform}
@@ -72,13 +86,14 @@ export default function Home() {
             dateOpacity={dateOpacity}
             activeIssue={activeIssue}
             onIssueChange={handleIssueChange}
+            browseMode={browseMode}
           />
         </div>
       </div>
       
       {/* 底部提示 - 固定在底部，在一开始可见，滚动后消失 */}
       <div className="fixed bottom-0 left-0 w-full z-31 transition-opacity duration-500"
-           style={{ opacity: scrollProgress < 0.1 ? 1 : 0 }}>
+           style={{ opacity: (scrollProgress < 0.1 || browseMode) ? 0 : 1 }}>
         <FooterNav />
       </div>
 
@@ -87,10 +102,15 @@ export default function Home() {
       
       {/* 浏览按钮 - 独立层级，保证在最上层，与HeaderNav同级，距离底部80px */}
       <div className="fixed left-0 w-full z-[100] pointer-events-auto"
-           style={{ bottom: '80px' }}>
+           style={{ 
+             bottom: browseMode ? '40px' : '80px',
+             transition: 'bottom 0.7s ease-in-out'
+           }}>
         <BrowseButton 
           scrollProgress={scrollProgress} 
           activeIssue={activeIssue}
+          browseMode={browseMode}
+          onBrowseClick={handleBrowseClick}
         />
       </div>
 
@@ -106,32 +126,39 @@ export default function Home() {
             <HeroTitle
               ref={titleRef}
               titleTransform={titleTransform}
-              titleOpacity={titleOpacity}
+              titleOpacity={browseMode ? 0 : titleOpacity}
               isScrolling={isScrolling}
             />
           </div>
         </div>
         
         {/* 信息文本区域 - 位于大标题初始位置的下方，固定位置，只淡出不移动 */}
-        <div className="fixed left-0 w-full flex justify-center" style={{ top: 'calc(50vh + 110px)' }}>
+        <div className="fixed left-0 w-full flex justify-center" 
+             style={{ 
+               top: 'calc(50vh + 110px)',
+               opacity: browseMode ? 0 : textOpacity,
+               transition: 'opacity 0.5s ease'
+             }}>
           <div className="max-w-4xl">
             <InfoText textOpacity={textOpacity} />
           </div>
         </div>
 
         {/* 中间内容区域 - 设置为固定位置，正好在大图标初始位置的顶部 */}
-        <div className="fixed left-0 w-full z-10 pointer-events-auto"
+        <div className="fixed left-0 w-full z-[21] pointer-events-auto"
              style={{ 
-               top: 'calc(50vh - 220px)',
-               opacity: scrollProgress > 0.2 ? 1 : 0, 
-               transition: 'opacity 0.7s ease',
-               pointerEvents: scrollProgress > 0.2 ? 'auto' : 'none' 
+               top: browseMode ? '50%' : 'calc(50vh - 220px)',
+               transform: browseMode ? 'translateY(-50%)' : 'translateY(0)',
+               opacity: browseMode ? 1 : (scrollProgress > 0.2 ? 1 : 0), 
+               transition: 'opacity 0.7s ease, top 0.7s ease-in-out, transform 0.7s ease-in-out',
+               pointerEvents: browseMode || scrollProgress > 0.2 ? 'auto' : 'none' 
              }}>
           <ContentSection 
             ref={contentRef}
             contentVisible={true}
             scrollProgress={scrollProgress}
             activeIssue={activeIssue}
+            browseMode={browseMode}
           />
         </div>
         

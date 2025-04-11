@@ -9,6 +9,7 @@ interface VolNumberElementsProps {
   dateOpacity: number;
   activeIssue?: number; // 外部传入的当前活动期数
   onIssueChange?: (issueNumber: number) => void; // 期数变化回调
+  browseMode?: boolean; // 浏览模式
 }
 
 // 期数数据接口
@@ -109,7 +110,8 @@ export function VolNumberElements({
   dateCurrentX, 
   dateOpacity,
   activeIssue = 54, // 默认值为54
-  onIssueChange
+  onIssueChange,
+  browseMode = false
 }: VolNumberElementsProps) {
   // 状态管理
   const [hoveredIssue, setHoveredIssue] = useState<number | null>(null);
@@ -194,7 +196,7 @@ export function VolNumberElements({
     <div className="max-w-6xl w-full px-8 relative">
       {/* Vol部分 */}
       <VolElement 
-        volTransform={volTransform} 
+        volTransform={browseMode ? 300 : volTransform} 
         elementsOpacity={elementsOpacity} 
       />
       
@@ -208,6 +210,7 @@ export function VolNumberElements({
           setHoveredIssue={setHoveredIssue}
           elementsOpacity={elementsOpacity}
           onIssueChange={handleIssueChange}
+          browseMode={browseMode}
         />
       )}
       
@@ -216,6 +219,7 @@ export function VolNumberElements({
         dateCurrentX={dateCurrentX} 
         dateOpacity={dateOpacity}
         issueData={issues.find(issue => issue.number === currentActiveIssue)}
+        browseMode={browseMode}
       />
     </div>
   );
@@ -240,7 +244,7 @@ function VolElement({
   };
   
   return (
-    <div className="absolute will-change-transform transform-gpu z-40 flex items-baseline" style={style}>
+    <div className="absolute will-change-transform transform-gpu z-40 flex items-center" style={style}>
       <h2 className={`${CONFIG.styles.volFontSize} font-newyork font-bold leading-none`}>Vol</h2>
     </div>
   );
@@ -254,7 +258,8 @@ function IssuesList({
   hoveredIssue, 
   setHoveredIssue,
   elementsOpacity,
-  onIssueChange
+  onIssueChange,
+  browseMode = false
 }: { 
   issues: Issue[],
   activeIssue: number,
@@ -262,7 +267,8 @@ function IssuesList({
   hoveredIssue: number | null,
   setHoveredIssue: (issue: number | null) => void,
   elementsOpacity: number,
-  onIssueChange: (issueNumber: number) => void
+  onIssueChange: (issueNumber: number) => void,
+  browseMode?: boolean
 }) {
   const { duration, timing } = CONFIG.animation;
   const issueStyles = CONFIG.styles.issue as IssueStyles;
@@ -274,60 +280,52 @@ function IssuesList({
     top: issuesTopOffset
   };
   
-  // 获取要显示的期数列表
-  const displayIssues = getDisplayIssues(issues, activeIssue);
-  
+  // 在浏览模式下，只显示当前活动的期数
+  const displayIssues = browseMode 
+    ? issues.filter(issue => issue.number === activeIssue)
+    : getDisplayIssues(issues, activeIssue);
+    
+  // 浏览模式下，强制将当前活动期数移到右侧
+  const activeBrowseTransform = 300;
+
   return (
-    <div 
-      className="absolute right-8 will-change-transform transform-gpu z-40 flex items-baseline" 
-      style={containerStyle}
-    >
-      <div className="relative">
-        {/* 期数项目 */}
-        {displayIssues.map((issue, index) => {
-          const isActive = issue.number === activeIssue;
-          const isHovered = issue.number === hoveredIssue;
-          
-          // 计算中心位置索引
-          const centerIndex = displayIssues.findIndex(i => i.number === activeIssue);
-          // 计算位置
-          const position = index - centerIndex;
-          const spacing = CONFIG.styles.spacing;
-          
-          // 获取当前期数的位置
-          const currentTransform = issuePositions[issue.number] !== undefined 
-            ? issuePositions[issue.number] 
-            : 0;
-          
-          // 基于状态确定样式类
-          const classStyle = isActive 
-            ? issueStyles.active 
-            : isHovered 
-              ? issueStyles.hovered 
-              : issueStyles.default;
-          
-          const style: CSSProperties = {
-            transform: `translateX(${currentTransform}px) translateY(${position * spacing}px) translateZ(0)`,
-            transition: `transform ${duration} ${timing}, opacity ${duration} ${timing}, font-size ${duration} ${timing}`,
-            zIndex: isActive ? 20 : 10 - Math.abs(position),
-            cursor: 'pointer',
-            willChange: 'transform, opacity, font-size'
-          };
-          
-          return (
-            <div 
-              key={issue.id}
-              className={`absolute right-0 font-newyork font-bold leading-none ${classStyle} hover:opacity-90`}
-              style={style}
-              onMouseEnter={() => setHoveredIssue(issue.number)}
-              onMouseLeave={() => setHoveredIssue(null)}
-              onClick={() => onIssueChange(issue.number)}
-            >
-              <div className="p-4 -m-4">{issue.number}</div>
-            </div>
-          );
-        })}
-      </div>
+    <div className="absolute right-0 transform-gpu will-change-transform z-20 flex flex-col items-end"
+         style={{
+           opacity: elementsOpacity,
+           transition: `opacity ${CONFIG.animation.duration} ${CONFIG.animation.timing}`,
+           top: CONFIG.layout.issuesTopOffset
+         }}>
+      {displayIssues.map((issue) => {
+        const isActive = issue.number === activeIssue;
+        
+        // 为每个期数计算样式
+        const { active, hovered, default: defaultStyle } = CONFIG.styles.issue as IssueStyles;
+        
+        let classNames = isActive ? active : 
+                         (hoveredIssue === issue.number) ? hovered : 
+                         defaultStyle;
+                         
+        const transform = browseMode && isActive 
+          ? `translateX(${activeBrowseTransform}px) translateZ(0)`
+          : `translateX(${issuePositions[issue.number] || 0}px) translateZ(0)`;
+        
+        return (
+          <div key={issue.id}
+               className={`font-newyork font-bold cursor-pointer leading-none ${classNames} flex items-center`}
+               style={{
+                 transform,
+                 transition: `transform ${CONFIG.animation.duration} ${CONFIG.animation.timing}, opacity ${CONFIG.animation.duration} ${CONFIG.animation.timing}`,
+                 marginBottom: isActive ? 0 : `${CONFIG.styles.spacing}px`,
+                 visibility: browseMode && !isActive ? 'hidden' : 'visible'
+               }}
+               onMouseEnter={() => !browseMode && setHoveredIssue(issue.number)}
+               onMouseLeave={() => !browseMode && setHoveredIssue(null)}
+               onClick={() => !browseMode && onIssueChange(issue.number)}
+          >
+            {issue.number}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -336,11 +334,13 @@ function IssuesList({
 function DateInfo({ 
   dateCurrentX, 
   dateOpacity,
-  issueData 
+  issueData,
+  browseMode = false
 }: { 
   dateCurrentX: number, 
   dateOpacity: number,
-  issueData?: Issue 
+  issueData?: Issue,
+  browseMode?: boolean
 }) {
   const { duration, timing } = CONFIG.animation;
   
@@ -353,6 +353,9 @@ function DateInfo({
     opacity: dateOpacity,
     transition: `transform ${duration} ${timing}, opacity ${duration} ${timing}`
   };
+  
+  // 浏览模式下隐藏日期信息
+  if (browseMode) return null;
   
   return (
     <div 
