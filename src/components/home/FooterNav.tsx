@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { useScrollVisibility } from "@/hooks/use-scroll-visibility";
 
 export function FooterNav() {
-  const isVisible = useScrollVisibility({ threshold: 20 });
+  const isVisible = useScrollVisibility();
 
   return (
     <motion.footer 

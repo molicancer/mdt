@@ -1,16 +1,37 @@
 import { FunctionComponent } from "react";
+import { motion } from "framer-motion";
+import { useScrollVisibility } from "@/hooks/use-scroll-visibility";
 
 interface InfoTextProps {
-  textOpacity: number;
+  browseMode?: boolean;
 }
 
-export const InfoText: FunctionComponent<InfoTextProps> = ({ textOpacity }) => {
+export const InfoText: FunctionComponent<InfoTextProps> = ({ 
+  browseMode = false 
+}) => {
+  const isVisible = useScrollVisibility();
+
   return (
-    <div className="w-full text-center transition-opacity duration-700"
-        style={{ opacity: textOpacity }}>
-      <p className="text-base text-gray-700 font-medium px-4">
-        每周收集精彩的设计资讯与灵感，带您了解设计与科技的最新趋势
+    <motion.div 
+      className="fixed w-full text-center flex justify-center"
+      initial={{ opacity: 1 }}
+      animate={{ 
+        opacity: isVisible ? 1 : 0
+      }}
+      transition={{ 
+        duration: 0.5,
+        ease: "easeInOut"
+      }}
+      style={{ 
+        top: 'calc(50vh + 140px)',
+        opacity: browseMode ? 0 : 1,
+        transition: 'opacity 0.5s ease'
+      }}
+    >
+      <p className="text-base text-[#545454] px-4 text-center relative">
+        Share the latest design and artificial intelligence consulting<span className="text-black">「 weekly news 」</span><br />
+        Updated once a Monday morning
       </p>
-    </div>
+    </motion.div>
   );
 }; 

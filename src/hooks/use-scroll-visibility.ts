@@ -10,30 +10,27 @@ export function useScrollVisibility({
   initialVisible = true
 }: UseScrollVisibilityOptions = {}) {
   const [isVisible, setIsVisible] = useState(initialVisible);
-  const [scrollY, setScrollY] = useState(0);
 
   useEffect(() => {
-    const handleWheel = (e: WheelEvent) => {
-      // 更新滚动位置
-      const newScrollY = Math.max(0, scrollY + e.deltaY);
-      setScrollY(newScrollY);
-
+    const handleScroll = () => {
+      const scrollY = window.scrollY;
+      
       // 根据滚动位置更新可见性
-      if (newScrollY > threshold && isVisible) {
+      if (scrollY > threshold && isVisible) {
         setIsVisible(false);
-      } else if (newScrollY <= threshold && !isVisible) {
+      } else if (scrollY <= threshold && !isVisible) {
         setIsVisible(true);
       }
     };
 
     // 添加事件监听
-    window.addEventListener('wheel', handleWheel, { passive: true });
+    window.addEventListener('scroll', handleScroll, { passive: true });
 
     // 清理函数
     return () => {
-      window.removeEventListener('wheel', handleWheel);
+      window.removeEventListener('scroll', handleScroll);
     };
-  }, [threshold, isVisible, scrollY]);
+  }, [threshold, isVisible]);
 
   return isVisible;
 } 

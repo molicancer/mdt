@@ -1,4 +1,5 @@
 import { forwardRef, useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 
 // 定义期数内容数据接口
 interface IssueContent {
@@ -47,8 +48,7 @@ const issueContents: IssueContent[] = [
 ];
 
 interface ContentSectionProps {
-  contentVisible: boolean;
-  scrollProgress: number;
+  scrollProgress: number; // 滚动进度
   activeIssue?: number; // 当前选中的期数
   browseMode?: boolean; // 是否处于浏览模式
 }
@@ -194,178 +194,236 @@ export const ContentSection = forwardRef<HTMLDivElement, ContentSectionProps>(
     };
     
     return (
-      <div ref={ref} className="relative">
-        {/* 颜色区域整体容器 - 浏览模式下隐藏 */}
-        <div 
-          className="w-full flex justify-center transition-all duration-700 relative"
-          style={{ 
-            opacity: browseMode ? 0 : 1,
-            visibility: browseMode ? 'hidden' : 'visible',
-            transitionProperty: 'opacity, visibility',
-            transitionDuration: '0.7s, 0s',
-            transitionDelay: '0s, ' + (browseMode ? '0.7s' : '0s')
-          }}
-        >
-          {/* 主颜色区域 - 鼠标悬停变化的核心区域 */}
-          <div 
-            className="rounded-lg w-full max-w-md cursor-pointer relative"
-            style={{ 
-              height: `${colorBlockHeight}px`, // 动态高度
-              backgroundColor: currentContent.color,
-              transitionProperty: 'background-color, height',
-              transitionDuration: '0.7s, 0.7s',
-              transitionTimingFunction: 'ease, ease-in-out',
+      <motion.div 
+        ref={ref}
+        className="fixed left-0 w-full z-[21] pointer-events-auto"
+        initial={{ 
+          top: 'calc(50vh - 220px)',
+          transform: 'translateY(0)',
+          opacity: 0,
+          pointerEvents: 'none'
+        }}
+        animate={{ 
+          top: browseMode ? '50%' : 'calc(50vh - 220px)',
+          transform: browseMode ? 'translateY(-50%)' : 'translateY(0)',
+          opacity: browseMode ? 1 : (scrollProgress > 0.2 ? 1 : 0),
+          pointerEvents: browseMode || scrollProgress > 0.2 ? 'auto' : 'none'
+        }}
+        transition={{ 
+          duration: 0.7,
+          ease: [0.4, 0, 0.2, 1]
+        }}
+      >
+        <div className="relative">
+          {/* 颜色区域整体容器 - 浏览模式下隐藏 */}
+          <motion.div 
+            className="w-full flex justify-center relative"
+            initial={{ opacity: 1, visibility: "visible" }}
+            animate={{ 
+              opacity: browseMode ? 0 : 1,
+              visibility: browseMode ? "hidden" : "visible"
             }}
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={handleMouseLeave}
-          >
-            {/* 过渡层 - 仅在切换期数时显示 */}
-            {isTransitioning && prevContent && (
-              <div 
-                className="absolute inset-0 pointer-events-none"
-                style={{
-                  backgroundColor: prevContent.color,
-                  opacity: contentFadeState === "fading-out" ? 1 : 0,
-                  transitionProperty: 'opacity',
-                  transitionDuration: '0.5s',
-                  transitionTimingFunction: 'ease',
-                  zIndex: 1
-                }}
-              />
-            )}
-          </div>
-        </div>
-        
-        {/* 图标部分 - 与颜色区域分离，以便在浏览模式下保持可见 */}
-        <div 
-          className={`${browseMode ? 'fixed inset-x-0 z-30' : 'absolute left-0 w-full'} flex justify-center pointer-events-none`}
-          style={{ 
-            top: browseMode ? '50%' : '0',
-            transform: browseMode ? 'translateY(-50%)' : 'translateY(0)',
-            opacity: contentFadeState === "visible" ? 1 : contentOpacity,
-            transitionProperty: 'top, opacity, transform',
-            transitionDuration: '0.5s, 0.5s, 0.5s',
-            transitionTimingFunction: 'ease-in-out, ease, ease-in-out',
-          }}
-        >
-          <div 
-            className={`w-full max-w-md flex items-center justify-center`}
-            style={{ 
-              height: browseMode ? '150px' : '300px',
-              opacity: contentFadeState === "visible" ? (isPhase3 && !browseMode ? 0.2 : 1) : contentOpacity,
-              transitionProperty: 'opacity, height',
-              transitionDuration: '0.5s, 0.7s',
-              transitionTimingFunction: 'ease, ease-in-out'
+            transition={{ 
+              duration: 0.7,
+              visibility: { delay: browseMode ? 0.7 : 0 }
             }}
           >
-            <div 
-              className="transition-all duration-500"
-              style={{
-                transform: browseMode ? 'scale(0.7)' : 'scale(1)',
-                transitionProperty: 'transform',
-                transitionDuration: '0.7s',
-                transitionTimingFunction: 'ease-in-out'
+            {/* 主颜色区域 - 鼠标悬停变化的核心区域 */}
+            <motion.div 
+              className="rounded-lg w-full max-w-md cursor-pointer relative"
+              style={{ 
+                height: `${colorBlockHeight}px`,
+                backgroundColor: currentContent.color
+              }}
+              animate={{ 
+                height: isHovered ? 450 : 300,
+                backgroundColor: currentContent.color
+              }}
+              transition={{ 
+                duration: 0.7,
+                ease: [0.4, 0, 0.2, 1]
+              }}
+              onMouseEnter={handleMouseEnter}
+              onMouseLeave={handleMouseLeave}
+            >
+              {/* 过渡层 - 仅在切换期数时显示 */}
+              <AnimatePresence>
+                {isTransitioning && prevContent && (
+                  <motion.div 
+                    className="absolute inset-0 pointer-events-none"
+                    initial={{ opacity: 1 }}
+                    animate={{ 
+                      opacity: contentFadeState === "fading-out" ? 1 : 0
+                    }}
+                    exit={{ opacity: 0 }}
+                    transition={{ 
+                      duration: 0.5,
+                      ease: [0.4, 0, 0.2, 1]
+                    }}
+                    style={{
+                      backgroundColor: prevContent.color,
+                      zIndex: 1
+                    }}
+                  />
+                )}
+              </AnimatePresence>
+            </motion.div>
+          </motion.div>
+          
+          {/* 图标部分 - 与颜色区域分离，以便在浏览模式下保持可见 */}
+          <motion.div 
+            className={`${browseMode ? 'fixed inset-x-0 z-30' : 'absolute left-0 w-full'} flex justify-center pointer-events-none`}
+            initial={{ top: 0, transform: "translateY(0)", opacity: 1 }}
+            animate={{ 
+              top: browseMode ? '50%' : 0,
+              transform: browseMode ? "translateY(-50%)" : "translateY(0)",
+              opacity: contentFadeState === "visible" ? 1 : contentOpacity
+            }}
+            transition={{ 
+              duration: 0.5,
+              ease: [0.4, 0, 0.2, 1]
+            }}
+          >
+            <motion.div 
+              className={`w-full max-w-md flex items-center justify-center`}
+              initial={{ height: 300, opacity: 1 }}
+              animate={{ 
+                height: browseMode ? 150 : 300,
+                opacity: contentFadeState === "visible" ? (isPhase3 && !browseMode ? 0.2 : 1) : contentOpacity
+              }}
+              transition={{ 
+                duration: 0.7,
+                ease: [0.4, 0, 0.2, 1]
               }}
             >
-              {renderIcon(currentContent.icon)}
-            </div>
-          </div>
-        </div>
-        
-        {/* 文字内容 - 浏览模式下隐藏 */}
-        <div 
-          className="absolute w-full pointer-events-none"
-          style={{ 
-            top: isHovered ? '0' : '340px',
-            opacity: browseMode ? 0 : (contentFadeState === "visible" ? initialOpacity : contentOpacity),
-            visibility: browseMode ? 'hidden' : 'visible',
-            transitionProperty: 'top, opacity, visibility',
-            transitionDuration: '0.7s, 0.5s, 0s',
-            transitionTimingFunction: 'ease-in-out, ease, linear',
-            transitionDelay: '0s, 0s, ' + (browseMode ? '0.5s' : '0s'),
-            zIndex: isHovered ? 10 : 1
-          }}
-        >
-          <div className="flex justify-center">
-            <div className="w-full max-w-md text-center">
-              <div 
-                className="mb-3 text-sm font-medium transition-all duration-500"
-                style={{ 
-                  transitionDelay: '0.05s',
-                  transitionProperty: 'transform',
-                  transitionDuration: '0.7s',
-                  transitionTimingFunction: 'ease-in-out',
-                  transform: isHovered ? 'translateY(150px)' : 'translateY(0)'
+              <motion.div 
+                initial={{ scale: 1 }}
+                animate={{ 
+                  scale: browseMode ? 0.7 : 1
+                }}
+                transition={{ 
+                  duration: 0.7,
+                  ease: [0.4, 0, 0.2, 1]
                 }}
               >
-                这周有什么新鲜事 👀 ?
+                {renderIcon(currentContent.icon)}
+              </motion.div>
+            </motion.div>
+          </motion.div>
+          
+          {/* 文字内容 - 浏览模式下隐藏 */}
+          <motion.div 
+            className="absolute w-full pointer-events-none"
+            initial={{ top: '340px', opacity: 1, visibility: "visible", zIndex: 1 }}
+            animate={{ 
+              top: isHovered ? '0' : '340px',
+              opacity: browseMode ? 0 : (contentFadeState === "visible" ? initialOpacity : contentOpacity),
+              visibility: browseMode ? "hidden" : "visible",
+              zIndex: isHovered ? 10 : 1
+            }}
+            transition={{ 
+              duration: 0.7,
+              ease: [0.4, 0, 0.2, 1],
+              visibility: { delay: browseMode ? 0.5 : 0 }
+            }}
+          >
+            <div className="flex justify-center">
+              <div className="w-full max-w-md text-center">
+                <motion.div 
+                  className="mb-3 text-sm font-medium"
+                  initial={{ transform: "translateY(0)" }}
+                  animate={{ 
+                    transform: isHovered ? "translateY(150px)" : "translateY(0)"
+                  }}
+                  transition={{ 
+                    duration: 0.7,
+                    ease: [0.4, 0, 0.2, 1],
+                    delay: 0.05
+                  }}
+                >
+                  这周有什么新鲜事 👀 ?
+                </motion.div>
+                <motion.h3 
+                  className="text-3xl font-newyork font-bold mb-1"
+                  initial={{ transform: "translateY(0)" }}
+                  animate={{ 
+                    transform: isHovered ? "translateY(150px)" : "translateY(0)"
+                  }}
+                  transition={{ 
+                    duration: 0.7,
+                    ease: [0.4, 0, 0.2, 1],
+                    delay: 0.1
+                  }}
+                >
+                  {currentContent.title}
+                </motion.h3>
+                <motion.p 
+                  className="text-xl font-newyork text-gray-700 mb-4"
+                  initial={{ transform: "translateY(0)" }}
+                  animate={{ 
+                    transform: isHovered ? "translateY(150px)" : "translateY(0)"
+                  }}
+                  transition={{ 
+                    duration: 0.7,
+                    ease: [0.4, 0, 0.2, 1],
+                    delay: 0.15
+                  }}
+                >
+                  {currentContent.subtitle}
+                </motion.p>
+                <motion.div 
+                  className="space-y-1 text-center"
+                  initial={{ opacity: 0, transform: "translateY(50px)" }}
+                  animate={{ 
+                    opacity: isHovered ? 1 : 0,
+                    transform: isHovered ? "translateY(150px)" : "translateY(50px)"
+                  }}
+                  transition={{ 
+                    duration: 0.7,
+                    ease: [0.4, 0, 0.2, 1]
+                  }}
+                >
+                  {currentContent.items.map((item, index) => (
+                    <motion.p 
+                      key={index} 
+                      className="text-base"
+                      initial={{ opacity: 0, transform: "translateY(20px)" }}
+                      animate={{ 
+                        opacity: isHovered ? 1 : 0,
+                        transform: isHovered ? "translateY(0)" : "translateY(20px)"
+                      }}
+                      transition={{ 
+                        duration: 0.7,
+                        ease: [0.4, 0, 0.2, 1],
+                        delay: 0.2 + index * 0.05
+                      }}
+                    >
+                      {item}
+                    </motion.p>
+                  ))}
+                  {currentContent.author && (
+                    <motion.p 
+                      className="text-base text-gray-600 mt-4 opacity-70"
+                      initial={{ opacity: 0, transform: "translateY(20px)" }}
+                      animate={{ 
+                        opacity: isHovered ? 0.7 : 0,
+                        transform: isHovered ? "translateY(0)" : "translateY(20px)"
+                      }}
+                      transition={{ 
+                        duration: 0.7,
+                        ease: [0.4, 0, 0.2, 1],
+                        delay: 0.2 + currentContent.items.length * 0.05 + 0.1
+                      }}
+                    >
+                      {currentContent.author}
+                    </motion.p>
+                  )}
+                </motion.div>
               </div>
-              <h3 
-                className="text-3xl font-newyork font-bold mb-1 transition-all duration-500"
-                style={{ 
-                  transitionDelay: '0.1s',
-                  transitionProperty: 'transform',
-                  transitionDuration: '0.7s',
-                  transitionTimingFunction: 'ease-in-out',
-                  transform: isHovered ? 'translateY(150px)' : 'translateY(0)'
-                }}
-              >
-                {currentContent.title}
-              </h3>
-              <p 
-                className="text-xl font-newyork text-gray-700 mb-4 transition-all duration-500"
-                style={{ 
-                  transitionDelay: '0.15s',
-                  transitionProperty: 'transform',
-                  transitionDuration: '0.7s',
-                  transitionTimingFunction: 'ease-in-out',
-                  transform: isHovered ? 'translateY(150px)' : 'translateY(0)'
-                }}
-              >
-                {currentContent.subtitle}
-              </p>
-              <div 
-                className="space-y-1 text-center"
-                style={{
-                  opacity: isHovered ? 1 : 0,
-                  transform: isHovered ? 'translateY(150px)' : 'translateY(50px)',
-                  transitionProperty: 'opacity, transform',
-                  transitionDuration: '0.5s, 0.7s',
-                  transitionTimingFunction: 'ease, ease-in-out'
-                }}
-              >
-                {currentContent.items.map((item, index) => (
-                  <p 
-                    key={index} 
-                    className="text-base transition-all duration-500" 
-                    style={{ 
-                      transitionDelay: `${0.2 + index * 0.05}s`,
-                      transitionProperty: 'all',
-                      transitionDuration: '0.7s',
-                      transitionTimingFunction: 'ease-in-out'
-                    }}
-                  >
-                    {item}
-                  </p>
-                ))}
-                {currentContent.author && (
-                  <p 
-                    className="text-base text-gray-600 mt-4 opacity-70 transition-all duration-500"
-                    style={{
-                      transitionDelay: `${0.2 + currentContent.items.length * 0.05 + 0.1}s`,
-                      transitionProperty: 'all',
-                      transitionDuration: '0.7s',
-                      transitionTimingFunction: 'ease-in-out'
-                    }}
-                  >
-                    {currentContent.author}
-                  </p>
-                )}
-              </div>
             </div>
-          </div>
+          </motion.div>
         </div>
-      </div>
+      </motion.div>
     );
   }
 ); 

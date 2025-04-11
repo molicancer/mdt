@@ -4,16 +4,16 @@ import { motion, AnimatePresence } from "framer-motion";
 
 // 类型定义
 interface VolNumberElementsProps {
-  volTransform: number;
-  numberTransform: number;
-  elementsOpacity: number;
-  dateCurrentX: number;
-  dateOpacity: number;
+  volTransform: number; // Vol元素的变换量
+  numberTransform: number; // 期数列表的变换量
+  elementsOpacity: number; // 元素的透明度
+  dateCurrentX: number; // 日期信息的X位置
+  dateOpacity: number; // 日期信息的透明度
   activeIssue?: number; // 外部传入的当前活动期数
   onIssueChange?: (issueNumber: number) => void; // 期数变化回调
   browseMode?: boolean; // 浏览模式
   visibilityConfig?: {
-    threshold?: number;
+    threshold?: number; // 可见性阈值
     initialVisible?: boolean;
     fadeInDelay?: number;
     fadeOutDelay?: number;
@@ -27,12 +27,6 @@ interface Issue {
   isLatest?: boolean; // 是否是最新一期
   date?: string;      // 发布日期
   title?: string;     // 期数标题
-}
-
-interface IssueStyles {
-  active: string;
-  hovered: string;
-  default: string;
 }
 
 // 配置常量
@@ -264,48 +258,40 @@ function VolElement({
 }: { 
   volTransform: number, 
   elementsOpacity: number 
-}) {
-  const { volTopOffset } = CONFIG.layout;
-  const { volFontSize } = CONFIG.styles;
-  const { duration } = CONFIG.animation;
-  
+}) {  
   return (
     <motion.div 
-      className="absolute will-change-transform transform-gpu z-40 flex items-center"
-      style={{ 
-        top: 0,  // 修改为 0，使其位于容器顶部
-        left: 0  // 添加 left: 0 确保水平位置
-      }}
+      className="absolute top-0 left-0 will-change-transform transform-gpu z-40 flex items-center"
       animate={{ 
         x: -volTransform,
         opacity: elementsOpacity
       }}
-      transition={{ duration, ease: "easeInOut" }}
+      transition={{ duration: 0.5, ease: "easeInOut" }}
     >
-      <h2 className={`${volFontSize} font-newyork font-bold leading-none`}>Vol</h2>
+      <h2 className="text-[150px] font-newyork-large leading-none">Vol</h2>
     </motion.div>
   );
 }
 
 // 子组件：期数列表
 function IssuesList({ 
-  issues,
-  activeIssue,
-  issuePositions, 
-  hoveredIssue, 
-  setHoveredIssue,
-  elementsOpacity,
-  onIssueChange,
-  browseMode = false
+  issues, // 期数数据
+  activeIssue, // 当前活动期数
+  issuePositions, // 期数位置
+  hoveredIssue, // 悬停的期数
+  setHoveredIssue, // 设置悬停的期数
+  elementsOpacity, // 元素透明度
+  onIssueChange, // 期数变化回调
+  browseMode = false // 浏览模式
 }: { 
-  issues: Issue[],
-  activeIssue: number,
-  issuePositions: Record<number, number>, 
-  hoveredIssue: number | null,
-  setHoveredIssue: (issue: number | null) => void,
-  elementsOpacity: number,
-  onIssueChange: (issueNumber: number) => void,
-  browseMode?: boolean
+  issues: Issue[], // 期数数据
+  activeIssue: number, // 当前活动期数
+  issuePositions: Record<number, number>, // 期数位置
+  hoveredIssue: number | null, // 悬停的期数
+  setHoveredIssue: (issue: number | null) => void, // 设置悬停的期数
+  elementsOpacity: number, // 元素透明度
+  onIssueChange: (issueNumber: number) => void, // 期数变化回调
+  browseMode?: boolean // 浏览模式
 }) {
   const { spacing, issue: issueStyles } = CONFIG.styles;
   const { duration } = CONFIG.animation;
@@ -318,10 +304,7 @@ function IssuesList({
 
   return (
     <motion.div 
-      className="absolute right-0 transform-gpu will-change-transform z-20 flex flex-col items-end"
-      style={{ 
-        top: 0  // 修改为 0，使其位于容器顶部
-      }}
+      className="absolute top-0 right-0 transform-gpu will-change-transform z-20 flex flex-col items-end"
       animate={{ opacity: elementsOpacity }}
       transition={{ duration, ease: "easeInOut" }}
     >
@@ -339,9 +322,9 @@ function IssuesList({
           return (
             <motion.div 
               key={issue.id}
-              className={`font-newyork font-bold cursor-pointer leading-none ${classNames} flex items-center`}
+              className={`font-newyork-large cursor-pointer leading-none ${classNames} flex items-center`}
               style={{
-                marginBottom: isActive ? 0 : `${spacing}px`,
+                marginBottom: isActive ? 0 : `150px`,
                 visibility: browseMode && !isActive ? 'hidden' : 'visible'
               }}
               animate={{ 
@@ -380,20 +363,16 @@ function DateInfo({
   
   return (
     <motion.div 
-      className="absolute left-8 bottom-[-30px] will-change-transform transform-gpu z-30 text-sm text-gray-500"
+      className="absolute top-36 will-change-transform transform-gpu"
       animate={{ 
         x: dateCurrentX,
         opacity: dateOpacity
       }}
       transition={{ duration, ease: "easeInOut" }}
     >
-      <div className="flex items-center">
-        <span className="opacity-70">the latest</span>
-        <span className="mx-1 opacity-50">·</span>
-        <span>{issueData.date}</span>
-        <span className="ml-1 opacity-50">·</span>
-        <span className="ml-1 opacity-70">monday updated</span>
-      </div>
+      <p className="text-[#545454]">
+        the latest Feb 23 2025 <br /> Monday updated
+      </p>
     </motion.div>
   );
 }
