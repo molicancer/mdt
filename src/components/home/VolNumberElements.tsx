@@ -7,6 +7,8 @@ interface VolNumberElementsProps {
   elementsOpacity: number;
   dateCurrentX: number;
   dateOpacity: number;
+  activeIssue?: number; // 外部传入的当前活动期数
+  onIssueChange?: (issueNumber: number) => void; // 期数变化回调
 }
 
 // 期数数据接口
@@ -51,17 +53,52 @@ const CONFIG = {
   }
 };
 
+// 计算动画延迟时间
+const calculateDelay = (distanceFromActive: number): number => {
+  const { baseDelay, incrementDelay } = CONFIG.animation;
+  return baseDelay + (distanceFromActive * incrementDelay);
+};
+
+// 获取要显示的期数
+const getDisplayIssues = (issues: Issue[], activeIssue: number): Issue[] => {
+  if (!issues.length) return [];
+  
+  // 按照期数排序（降序）
+  const sortedIssues = [...issues].sort((a, b) => b.number - a.number);
+  
+  // 找出当前活动期数的索引
+  const activeIndex = sortedIssues.findIndex(i => i.number === activeIssue);
+  
+  // 如果找不到活动期数，返回全部
+  if (activeIndex === -1) return sortedIssues;
+  
+  // 最多显示的期数数量
+  const { maxDisplayCount } = CONFIG.styles;
+  
+  // 计算显示范围
+  const halfCount = Math.floor(maxDisplayCount / 2);
+  let startIndex = Math.max(0, activeIndex - halfCount);
+  const endIndex = Math.min(sortedIssues.length - 1, startIndex + maxDisplayCount - 1);
+  
+  // 如果结束索引不够，调整起始索引
+  if (endIndex - startIndex + 1 < maxDisplayCount) {
+    startIndex = Math.max(0, endIndex - maxDisplayCount + 1);
+  }
+  
+  return sortedIssues.slice(startIndex, endIndex + 1);
+};
+
 // 模拟从API获取期数数据的函数 (日后可替换为真实API调用)
 const fetchIssues = async (): Promise<Issue[]> => {
   // 模拟数据 - 实际开发中替换为API请求
   return [
-    { id: 1, number: 54, isLatest: true, date: '2025-02-23', title: 'Latest Issue' },
-    { id: 2, number: 53, date: '2025-01-15', title: 'Winter Special' },
-    { id: 3, number: 52, date: '2024-12-10', title: 'Year End' },
-    { id: 4, number: 51, date: '2024-11-05', title: 'Autumn Collection' },
-    { id: 5, number: 50, date: '2024-10-01', title: 'Anniversary Issue' },
-    { id: 6, number: 49, date: '2024-09-01', title: 'September Issue' },
-    { id: 7, number: 48, date: '2024-08-01', title: 'Summer Special' }
+    { id: 1, number: 54, isLatest: true, date: 'Feb 23 2025', title: 'Latest Issue' },
+    { id: 2, number: 53, date: 'Feb 23 2025', title: 'Winter Special' },
+    { id: 3, number: 52, date: 'Feb 23 2025', title: 'Year End' },
+    { id: 4, number: 51, date: 'Feb 23 2025', title: 'Autumn Collection' },
+    { id: 5, number: 50, date: 'Feb 23 2025', title: 'Anniversary Issue' },
+    { id: 6, number: 49, date: 'Feb 23 2025', title: 'September Issue' },
+    { id: 7, number: 48, date: 'Feb 23 2025', title: 'Summer Special' }
   ];
 };
 
@@ -70,14 +107,16 @@ export function VolNumberElements({
   numberTransform, 
   elementsOpacity, 
   dateCurrentX, 
-  dateOpacity 
+  dateOpacity,
+  activeIssue = 54, // 默认值为54
+  onIssueChange
 }: VolNumberElementsProps) {
   // 状态管理
   const [hoveredIssue, setHoveredIssue] = useState<number | null>(null);
   const [issuePositions, setIssuePositions] = useState<{ [key: number]: number }>({});
   const [issues, setIssues] = useState<Issue[]>([]);
-  const [activeIssue, setActiveIssue] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [currentActiveIssue, setCurrentActiveIssue] = useState<number>(activeIssue);
   
   // 加载期数数据
   useEffect(() => {
@@ -89,7 +128,7 @@ export function VolNumberElements({
         
         // 默认选中最新一期
         const latestIssue = data.find(issue => issue.isLatest)?.number || data[0]?.number;
-        setActiveIssue(latestIssue);
+        setCurrentActiveIssue(latestIssue);
         
       } catch (error) {
         console.error('Failed to load issues:', error);
@@ -101,19 +140,26 @@ export function VolNumberElements({
     loadIssues();
   }, []);
   
+  // 同步外部传入的activeIssue
+  useEffect(() => {
+    if (activeIssue) {
+      setCurrentActiveIssue(activeIssue);
+    }
+  }, [activeIssue]);
+  
   // 处理动画延迟效果
   useEffect(() => {
-    if (issues.length === 0 || activeIssue === null) return;
+    if (issues.length === 0) return;
     
     // 清除之前的定时器以防止内存泄漏
     const timers: NodeJS.Timeout[] = [];
     
     // 获取实际要显示的期数 (以activeIssue为中心)
-    const displayIssues = getDisplayIssues(issues, activeIssue);
+    const displayIssues = getDisplayIssues(issues, currentActiveIssue);
     
     // 为每个期数设置延迟更新
     displayIssues.forEach((issue) => {
-      const distanceFromActive = Math.abs(activeIssue - issue.number);
+      const distanceFromActive = Math.abs(currentActiveIssue - issue.number);
       const delay = calculateDelay(distanceFromActive);
       
       const timer = setTimeout(() => {
@@ -130,13 +176,14 @@ export function VolNumberElements({
     return () => {
       timers.forEach(timer => clearTimeout(timer));
     };
-  }, [numberTransform, issues, activeIssue]);
+  }, [numberTransform, issues, currentActiveIssue]);
   
   // 处理期数切换
   const handleIssueChange = (issueNumber: number) => {
     // 日后可扩展为路由跳转或触发其他UI变化
     console.log(`Navigate to issue ${issueNumber}`);
-    setActiveIssue(issueNumber);
+    setCurrentActiveIssue(issueNumber);
+    onIssueChange?.(issueNumber);
   };
   
   if (isLoading) {
@@ -152,10 +199,10 @@ export function VolNumberElements({
       />
       
       {/* 期数列表 */}
-      {issues.length > 0 && activeIssue !== null && (
+      {issues.length > 0 && (
         <IssuesList 
           issues={issues}
-          activeIssue={activeIssue}
+          activeIssue={currentActiveIssue}
           issuePositions={issuePositions} 
           hoveredIssue={hoveredIssue}
           setHoveredIssue={setHoveredIssue}
@@ -165,13 +212,11 @@ export function VolNumberElements({
       )}
       
       {/* 日期信息 */}
-      {activeIssue !== null && (
-        <DateInfo 
-          dateCurrentX={dateCurrentX} 
-          dateOpacity={dateOpacity}
-          issueData={issues.find(issue => issue.number === activeIssue)}
-        />
-      )}
+      <DateInfo 
+        dateCurrentX={dateCurrentX} 
+        dateOpacity={dateOpacity}
+        issueData={issues.find(issue => issue.number === currentActiveIssue)}
+      />
     </div>
   );
 }
@@ -262,36 +307,26 @@ function IssuesList({
               : issueStyles.default;
           
           const style: CSSProperties = {
-            transform: `translate(calc(-50% + ${currentTransform}px), ${position * spacing}px)`,
-            left: '50%',
-            position: 'absolute',
+            transform: `translateX(${currentTransform}px) translateY(${position * spacing}px) translateZ(0)`,
             transition: `transform ${duration} ${timing}, opacity ${duration} ${timing}, font-size ${duration} ${timing}`,
-            willChange: 'transform, opacity, font-size',
-            lineHeight: 1
+            zIndex: isActive ? 20 : 10 - Math.abs(position),
+            cursor: 'pointer',
+            willChange: 'transform, opacity, font-size'
           };
           
           return (
             <div 
               key={issue.id}
-              className={`font-newyork font-bold cursor-pointer ${classStyle}`}
+              className={`absolute right-0 font-newyork font-bold leading-none ${classStyle} hover:opacity-90`}
               style={style}
               onMouseEnter={() => setHoveredIssue(issue.number)}
               onMouseLeave={() => setHoveredIssue(null)}
               onClick={() => onIssueChange(issue.number)}
             >
-              {issue.number}
+              <div className="p-4 -m-4">{issue.number}</div>
             </div>
           );
         })}
-        
-        {/* 垂直虚线指示器 */}
-        <div 
-          className="absolute left-1/2 h-[600px] w-[1px] bg-gray-200 opacity-30"
-          style={{ 
-            transform: 'translateX(-50%)',
-            top: '75px' // 调整虚线位置以适应新的布局
-          }}
-        ></div>
       </div>
     </div>
   );
@@ -301,66 +336,36 @@ function IssuesList({
 function DateInfo({ 
   dateCurrentX, 
   dateOpacity,
-  issueData
+  issueData 
 }: { 
   dateCurrentX: number, 
   dateOpacity: number,
-  issueData?: Issue
+  issueData?: Issue 
 }) {
   const { duration, timing } = CONFIG.animation;
   
+  if (!issueData) {
+    return null;
+  }
+  
   const style: CSSProperties = {
-    left: '0',
-    top: '120px',
     transform: `translateX(${dateCurrentX}px) translateZ(0)`,
     opacity: dateOpacity,
     transition: `transform ${duration} ${timing}, opacity ${duration} ${timing}`
   };
   
-  // 格式化日期显示
-  const formattedDate = issueData?.date 
-    ? new Date(issueData.date).toLocaleDateString('en-US', { 
-        year: 'numeric', 
-        month: 'short', 
-        day: 'numeric' 
-      })
-    : 'the latest Feb 23 2025';
-  
   return (
-    <div className="absolute will-change-transform transform-gpu z-40" style={style}>
-      <div className="text-sm text-gray-600">
-        <div>{issueData?.isLatest ? 'the latest ' : ''}{formattedDate}</div>
-        <div>{issueData?.title || 'Monday updated'}</div>
+    <div 
+      className="absolute left-8 bottom-[-30px] will-change-transform transform-gpu z-30 text-sm text-gray-500" 
+      style={style}
+    >
+      <div className="flex items-center">
+        <span className="opacity-70">the latest</span>
+        <span className="mx-1 opacity-50">·</span>
+        <span>{issueData.date}</span>
+        <span className="ml-1 opacity-50">·</span>
+        <span className="ml-1 opacity-70">monday updated</span>
       </div>
     </div>
   );
 }
-
-// 工具函数：计算延迟时间
-function calculateDelay(distanceFromActive: number): number {
-  const { baseDelay, incrementDelay } = CONFIG.animation;
-  return distanceFromActive === 0 ? 0 : baseDelay + (distanceFromActive - 1) * incrementDelay;
-}
-
-// 工具函数：从所有期数中筛选出要显示的期数
-function getDisplayIssues(issues: Issue[], activeIssue: number): Issue[] {
-  const maxDisplayCount = CONFIG.styles.maxDisplayCount;
-  
-  // 确保activeIssue在中间位置
-  const activeIndex = issues.findIndex(issue => issue.number === activeIssue);
-  
-  if (activeIndex === -1) return issues.slice(0, maxDisplayCount);
-  
-  // 计算显示窗口的边界
-  const halfCount = Math.floor(maxDisplayCount / 2);
-  let startIndex = activeIndex - halfCount;
-  
-  // 边界处理
-  if (startIndex < 0) startIndex = 0;
-  if (startIndex + maxDisplayCount > issues.length) {
-    startIndex = Math.max(0, issues.length - maxDisplayCount);
-  }
-  
-  // 截取要显示的期数
-  return issues.slice(startIndex, startIndex + maxDisplayCount);
-} 

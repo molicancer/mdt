@@ -8,7 +8,6 @@ interface ScrollAnimationConfig {
   showContentThreshold?: number; // 显示内容的阈值
   hideContentThreshold?: number; // 隐藏内容的阈值
   smoothUpdateFactor?: number; // 平滑更新因子
-  extendedScrollThreshold?: number; // 扩展滚动阈值，用于支持更长的滚动范围
 }
 
 interface ScrollAnimationState {
@@ -37,7 +36,6 @@ export function useScrollAnimation(
     showContentThreshold = 0.6,
     hideContentThreshold = 0.3,
     smoothUpdateFactor = 0.5,
-    extendedScrollThreshold = 1000,
   } = config;
 
   // 状态
@@ -56,8 +54,6 @@ export function useScrollAnimation(
   const moveDistance = 380; // Vol和54的移动距离
   const dateInitialX = -600; // 日期初始X位置
   const dateFinalX = -moveDistance; // 日期最终X位置
-  const dateOpacityStart = 0.05; // 日期开始显示的滚动进度
-  const dateOpacityEnd = 0.4; // 日期完全显示的滚动进度
 
   // 使用requestAnimationFrame平滑更新状态
   useEffect(() => {

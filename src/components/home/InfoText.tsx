@@ -1,19 +1,16 @@
+import { FunctionComponent } from "react";
+
 interface InfoTextProps {
   textOpacity: number;
-  scrollProgress: number;
 }
 
-export function InfoText({ textOpacity, scrollProgress }: InfoTextProps) {
+export const InfoText: FunctionComponent<InfoTextProps> = ({ textOpacity }) => {
   return (
-    <div className="w-full max-w-4xl">
-      <div 
-        className="text-sm text-muted-foreground text-center transition-opacity duration-500 will-change-opacity"
-        style={{ opacity: textOpacity }}
-      >
-        <p>
-          Share the latest design and artificial intelligence consulting <span className="font-medium text-foreground">「 weekly news 」</span><br />Updated once a Monday morning
-        </p>
-      </div>
+    <div className="w-full text-center transition-opacity duration-700"
+        style={{ opacity: textOpacity }}>
+      <p className="text-base text-gray-700 font-medium px-4">
+        每周收集精彩的设计资讯与灵感，带您了解设计与科技的最新趋势
+      </p>
     </div>
   );
-} 
+}; 

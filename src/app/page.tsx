@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { BlurMasks } from "@/components/home/BlurMasks";
 import { BackToTopButton } from "@/components/home/BackToTopButton";
 import { ContentSection } from "@/components/home/ContentSection";
@@ -34,9 +34,17 @@ export default function Home() {
     scrollThreshold: 1000,
     showContentThreshold: 0.3,
     hideContentThreshold: 0.15,
-    smoothUpdateFactor: 0.5,
-    extendedScrollThreshold: 1500
+    smoothUpdateFactor: 0.5
   });
+
+  // 管理当前选中的期数
+  const [activeIssue, setActiveIssue] = useState<number>(54);
+
+  // 处理期数变化
+  const handleIssueChange = (issueNumber: number) => {
+    console.log(`切换到期数: ${issueNumber}`);
+    setActiveIssue(issueNumber);
+  };
 
   return (
     <main className="min-h-screen overflow-x-hidden bg-background">
@@ -54,7 +62,7 @@ export default function Home() {
         </div>
         
         {/* "Vol"和"54"标题 - 滚动时分别向左右两侧移动，放置在页面正中间 */}
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none" 
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-auto" 
              style={{ top: '40%', transform: 'translateY(-50%)' }}>
           <VolNumberElements
             volTransform={volTransform}
@@ -62,6 +70,8 @@ export default function Home() {
             elementsOpacity={elementsOpacity}
             dateCurrentX={dateCurrentX}
             dateOpacity={dateOpacity}
+            activeIssue={activeIssue}
+            onIssueChange={handleIssueChange}
           />
         </div>
       </div>
@@ -78,7 +88,10 @@ export default function Home() {
       {/* 浏览按钮 - 独立层级，保证在最上层，与HeaderNav同级，距离底部80px */}
       <div className="fixed left-0 w-full z-[100] pointer-events-auto"
            style={{ bottom: '80px' }}>
-        <BrowseButton scrollProgress={scrollProgress} />
+        <BrowseButton 
+          scrollProgress={scrollProgress} 
+          activeIssue={activeIssue}
+        />
       </div>
 
       {/* 返回顶部按钮 */}
@@ -102,7 +115,7 @@ export default function Home() {
         {/* 信息文本区域 - 位于大标题初始位置的下方，固定位置，只淡出不移动 */}
         <div className="fixed left-0 w-full flex justify-center" style={{ top: 'calc(50vh + 110px)' }}>
           <div className="max-w-4xl">
-            <InfoText textOpacity={textOpacity} scrollProgress={scrollProgress} />
+            <InfoText textOpacity={textOpacity} />
           </div>
         </div>
 
@@ -118,6 +131,7 @@ export default function Home() {
             ref={contentRef}
             contentVisible={true}
             scrollProgress={scrollProgress}
+            activeIssue={activeIssue}
           />
         </div>
         
