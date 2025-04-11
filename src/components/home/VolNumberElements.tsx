@@ -1,4 +1,6 @@
-import { useState, useEffect, CSSProperties } from "react";
+import { useState, useEffect } from "react";
+import { useScrollVisibility } from "@/hooks/use-scroll-visibility";
+import { motion, AnimatePresence } from "framer-motion";
 
 // 类型定义
 interface VolNumberElementsProps {
@@ -10,6 +12,12 @@ interface VolNumberElementsProps {
   activeIssue?: number; // 外部传入的当前活动期数
   onIssueChange?: (issueNumber: number) => void; // 期数变化回调
   browseMode?: boolean; // 浏览模式
+  visibilityConfig?: {
+    threshold?: number;
+    initialVisible?: boolean;
+    fadeInDelay?: number;
+    fadeOutDelay?: number;
+  };
 }
 
 // 期数数据接口
@@ -31,10 +39,9 @@ interface IssueStyles {
 const CONFIG = {
   // 动画配置
   animation: {
-    duration: '0.5s',
-    timing: 'linear',
-    baseDelay: 0.01,  // 基础延迟时间
-    incrementDelay: 0.02 // 每级增加的延迟
+    duration: 0.5,
+    baseDelay: 0.01,
+    incrementDelay: 0.02
   },
   // 样式配置
   styles: {
@@ -43,16 +50,24 @@ const CONFIG = {
       hovered: 'text-[140px] opacity-70',
       default: 'text-[130px] opacity-30'
     },
-    spacing: 150, // 期数之间的垂直间距
-    volFontSize: 'text-[150px]', // Vol的字体大小
-    maxDisplayCount: 10 // 最多显示的期数数量
+    spacing: 150,
+    volFontSize: 'text-[150px]',
+    maxDisplayCount: 10
   },
   // 布局配置
   layout: {
-    volTopOffset: 0, // Vol的顶部偏移
-    issuesTopOffset: 0 // 期数列表的顶部偏移
+    volTopOffset: '50%',  // Vol 元素垂直居中
+    issuesTopOffset: 0    // IssuesList 不需要额外的 top 偏移
+  },
+  // 默认配置
+  defaults: {
+    threshold: 100,
+    initialVisible: true,
+    fadeInDelay: 300,
+    fadeOutDelay: 300,
+    activeIssue: 54
   }
-};
+} as const;
 
 // 计算动画延迟时间
 const calculateDelay = (distanceFromActive: number): number => {
@@ -109,33 +124,38 @@ export function VolNumberElements({
   elementsOpacity, 
   dateCurrentX, 
   dateOpacity,
-  activeIssue = 54, // 默认值为54
+  activeIssue = CONFIG.defaults.activeIssue,
   onIssueChange,
-  browseMode = false
+  browseMode = false,
+  visibilityConfig = {
+    threshold: CONFIG.defaults.threshold,
+    initialVisible: CONFIG.defaults.initialVisible,
+    fadeInDelay: CONFIG.defaults.fadeInDelay,
+    fadeOutDelay: CONFIG.defaults.fadeOutDelay
+  }
 }: VolNumberElementsProps) {
+  // 使用 useScrollVisibility 钩子，传入配置
+  const isVisible = useScrollVisibility({
+    threshold: visibilityConfig?.threshold ?? CONFIG.defaults.threshold,
+    initialVisible: visibilityConfig?.initialVisible ?? CONFIG.defaults.initialVisible
+  });
+
   // 状态管理
   const [hoveredIssue, setHoveredIssue] = useState<number | null>(null);
-  const [issuePositions, setIssuePositions] = useState<{ [key: number]: number }>({});
+  const [issuePositions, setIssuePositions] = useState<Record<number, number>>({});
   const [issues, setIssues] = useState<Issue[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [currentActiveIssue, setCurrentActiveIssue] = useState<number>(activeIssue);
+  const [currentActiveIssue, setCurrentActiveIssue] = useState(activeIssue);
   
   // 加载期数数据
   useEffect(() => {
     const loadIssues = async () => {
-      setIsLoading(true);
       try {
         const data = await fetchIssues();
         setIssues(data);
-        
-        // 默认选中最新一期
         const latestIssue = data.find(issue => issue.isLatest)?.number || data[0]?.number;
         setCurrentActiveIssue(latestIssue);
-        
       } catch (error) {
         console.error('Failed to load issues:', error);
-      } finally {
-        setIsLoading(false);
       }
     };
     
@@ -188,39 +208,51 @@ export function VolNumberElements({
     onIssueChange?.(issueNumber);
   };
   
-  if (isLoading) {
-    return <div className="flex justify-center items-center h-40">加载中...</div>;
-  }
-  
   return (
-    <div className="max-w-6xl w-full px-8 relative">
-      {/* Vol部分 */}
-      <VolElement 
-        volTransform={browseMode ? 300 : volTransform} 
-        elementsOpacity={elementsOpacity} 
-      />
-      
-      {/* 期数列表 */}
-      {issues.length > 0 && (
-        <IssuesList 
-          issues={issues}
-          activeIssue={currentActiveIssue}
-          issuePositions={issuePositions} 
-          hoveredIssue={hoveredIssue}
-          setHoveredIssue={setHoveredIssue}
-          elementsOpacity={elementsOpacity}
-          onIssueChange={handleIssueChange}
+    <div className="absolute inset-0 flex items-center justify-center pointer-events-auto" 
+         style={{ 
+           top: browseMode ? '50%' : '40%', 
+           transform: browseMode ? 'translateY(-50%)' : 'translateY(0)', 
+           transition: 'top 0.7s ease-in-out, transform 0.7s ease-in-out',
+           height: 'auto'
+         }}>
+      <motion.div 
+        className="max-w-6xl w-full px-8 relative h-[600px]" // 添加固定高度
+        initial={{ opacity: 0 }}
+        animate={{ opacity: isVisible ? 1 : 0 }}
+        transition={{ 
+          duration: (isVisible ? (visibilityConfig?.fadeInDelay ?? 300) : (visibilityConfig?.fadeOutDelay ?? 300)) / 1000,
+          ease: "easeInOut"
+        }}
+      >
+        {/* Vol部分 */}
+        <VolElement 
+          volTransform={browseMode ? 300 : volTransform} 
+          elementsOpacity={elementsOpacity} 
+        />
+        
+        {/* 期数列表 */}
+        {issues.length > 0 && (
+          <IssuesList 
+            issues={issues}
+            activeIssue={currentActiveIssue}
+            issuePositions={issuePositions} 
+            hoveredIssue={hoveredIssue}
+            setHoveredIssue={setHoveredIssue}
+            elementsOpacity={elementsOpacity}
+            onIssueChange={handleIssueChange}
+            browseMode={browseMode}
+          />
+        )}
+        
+        {/* 日期信息 */}
+        <DateInfo 
+          dateCurrentX={dateCurrentX} 
+          dateOpacity={dateOpacity}
+          issueData={issues.find(issue => issue.number === currentActiveIssue)}
           browseMode={browseMode}
         />
-      )}
-      
-      {/* 日期信息 */}
-      <DateInfo 
-        dateCurrentX={dateCurrentX} 
-        dateOpacity={dateOpacity}
-        issueData={issues.find(issue => issue.number === currentActiveIssue)}
-        browseMode={browseMode}
-      />
+      </motion.div>
     </div>
   );
 }
@@ -233,20 +265,25 @@ function VolElement({
   volTransform: number, 
   elementsOpacity: number 
 }) {
-  const { duration, timing } = CONFIG.animation;
   const { volTopOffset } = CONFIG.layout;
-  
-  const style: CSSProperties = {
-    transform: `translateX(-${volTransform}px) translateZ(0)`,
-    opacity: elementsOpacity,
-    transition: `transform ${duration} ${timing}, opacity ${duration} ${timing}`,
-    top: volTopOffset
-  };
+  const { volFontSize } = CONFIG.styles;
+  const { duration } = CONFIG.animation;
   
   return (
-    <div className="absolute will-change-transform transform-gpu z-40 flex items-center" style={style}>
-      <h2 className={`${CONFIG.styles.volFontSize} font-newyork font-bold leading-none`}>Vol</h2>
-    </div>
+    <motion.div 
+      className="absolute will-change-transform transform-gpu z-40 flex items-center"
+      style={{ 
+        top: 0,  // 修改为 0，使其位于容器顶部
+        left: 0  // 添加 left: 0 确保水平位置
+      }}
+      animate={{ 
+        x: -volTransform,
+        opacity: elementsOpacity
+      }}
+      transition={{ duration, ease: "easeInOut" }}
+    >
+      <h2 className={`${volFontSize} font-newyork font-bold leading-none`}>Vol</h2>
+    </motion.div>
   );
 }
 
@@ -263,70 +300,65 @@ function IssuesList({
 }: { 
   issues: Issue[],
   activeIssue: number,
-  issuePositions: { [key: number]: number }, 
+  issuePositions: Record<number, number>, 
   hoveredIssue: number | null,
   setHoveredIssue: (issue: number | null) => void,
   elementsOpacity: number,
   onIssueChange: (issueNumber: number) => void,
   browseMode?: boolean
 }) {
-  const { duration, timing } = CONFIG.animation;
-  const issueStyles = CONFIG.styles.issue as IssueStyles;
-  const { issuesTopOffset } = CONFIG.layout;
+  const { spacing, issue: issueStyles } = CONFIG.styles;
+  const { duration } = CONFIG.animation;
   
-  const containerStyle: CSSProperties = {
-    opacity: elementsOpacity,
-    transition: `opacity ${duration} ${timing}`,
-    top: issuesTopOffset
-  };
-  
-  // 在浏览模式下，只显示当前活动的期数
   const displayIssues = browseMode 
     ? issues.filter(issue => issue.number === activeIssue)
     : getDisplayIssues(issues, activeIssue);
     
-  // 浏览模式下，强制将当前活动期数移到右侧
   const activeBrowseTransform = 300;
 
   return (
-    <div className="absolute right-0 transform-gpu will-change-transform z-20 flex flex-col items-end"
-         style={{
-           opacity: elementsOpacity,
-           transition: `opacity ${CONFIG.animation.duration} ${CONFIG.animation.timing}`,
-           top: CONFIG.layout.issuesTopOffset
-         }}>
-      {displayIssues.map((issue) => {
-        const isActive = issue.number === activeIssue;
-        
-        // 为每个期数计算样式
-        const { active, hovered, default: defaultStyle } = CONFIG.styles.issue as IssueStyles;
-        
-        let classNames = isActive ? active : 
-                         (hoveredIssue === issue.number) ? hovered : 
-                         defaultStyle;
-                         
-        const transform = browseMode && isActive 
-          ? `translateX(${activeBrowseTransform}px) translateZ(0)`
-          : `translateX(${issuePositions[issue.number] || 0}px) translateZ(0)`;
-        
-        return (
-          <div key={issue.id}
-               className={`font-newyork font-bold cursor-pointer leading-none ${classNames} flex items-center`}
-               style={{
-                 transform,
-                 transition: `transform ${CONFIG.animation.duration} ${CONFIG.animation.timing}, opacity ${CONFIG.animation.duration} ${CONFIG.animation.timing}`,
-                 marginBottom: isActive ? 0 : `${CONFIG.styles.spacing}px`,
-                 visibility: browseMode && !isActive ? 'hidden' : 'visible'
-               }}
-               onMouseEnter={() => !browseMode && setHoveredIssue(issue.number)}
-               onMouseLeave={() => !browseMode && setHoveredIssue(null)}
-               onClick={() => !browseMode && onIssueChange(issue.number)}
-          >
-            {issue.number}
-          </div>
-        );
-      })}
-    </div>
+    <motion.div 
+      className="absolute right-0 transform-gpu will-change-transform z-20 flex flex-col items-end"
+      style={{ 
+        top: 0  // 修改为 0，使其位于容器顶部
+      }}
+      animate={{ opacity: elementsOpacity }}
+      transition={{ duration, ease: "easeInOut" }}
+    >
+      <AnimatePresence>
+        {displayIssues.map((issue) => {
+          const isActive = issue.number === activeIssue;
+          const classNames = isActive ? issueStyles.active : 
+                           (hoveredIssue === issue.number) ? issueStyles.hovered : 
+                           issueStyles.default;
+          
+          const xPosition = browseMode && isActive 
+            ? activeBrowseTransform 
+            : issuePositions[issue.number] || 0;
+          
+          return (
+            <motion.div 
+              key={issue.id}
+              className={`font-newyork font-bold cursor-pointer leading-none ${classNames} flex items-center`}
+              style={{
+                marginBottom: isActive ? 0 : `${spacing}px`,
+                visibility: browseMode && !isActive ? 'hidden' : 'visible'
+              }}
+              animate={{ 
+                x: xPosition,
+                opacity: elementsOpacity
+              }}
+              transition={{ duration, ease: "easeInOut" }}
+              onMouseEnter={() => !browseMode && setHoveredIssue(issue.number)}
+              onMouseLeave={() => !browseMode && setHoveredIssue(null)}
+              onClick={() => !browseMode && onIssueChange(issue.number)}
+            >
+              {issue.number}
+            </motion.div>
+          );
+        })}
+      </AnimatePresence>
+    </motion.div>
   );
 }
 
@@ -342,25 +374,18 @@ function DateInfo({
   issueData?: Issue,
   browseMode?: boolean
 }) {
-  const { duration, timing } = CONFIG.animation;
+  if (!issueData || browseMode) return null;
   
-  if (!issueData) {
-    return null;
-  }
-  
-  const style: CSSProperties = {
-    transform: `translateX(${dateCurrentX}px) translateZ(0)`,
-    opacity: dateOpacity,
-    transition: `transform ${duration} ${timing}, opacity ${duration} ${timing}`
-  };
-  
-  // 浏览模式下隐藏日期信息
-  if (browseMode) return null;
+  const { duration } = CONFIG.animation;
   
   return (
-    <div 
-      className="absolute left-8 bottom-[-30px] will-change-transform transform-gpu z-30 text-sm text-gray-500" 
-      style={style}
+    <motion.div 
+      className="absolute left-8 bottom-[-30px] will-change-transform transform-gpu z-30 text-sm text-gray-500"
+      animate={{ 
+        x: dateCurrentX,
+        opacity: dateOpacity
+      }}
+      transition={{ duration, ease: "easeInOut" }}
     >
       <div className="flex items-center">
         <span className="opacity-70">the latest</span>
@@ -369,6 +394,6 @@ function DateInfo({
         <span className="ml-1 opacity-50">·</span>
         <span className="ml-1 opacity-70">monday updated</span>
       </div>
-    </div>
+    </motion.div>
   );
 }

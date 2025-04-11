@@ -2,7 +2,6 @@
 
 import { useRef, useState } from "react";
 import { BlurMasks } from "@/components/home/BlurMasks";
-import { BackToTopButton } from "@/components/home/BackToTopButton";
 import { ContentSection } from "@/components/home/ContentSection";
 import { FooterNav } from "@/components/home/FooterNav";
 import { HeaderNav } from "@/components/home/HeaderNav";
@@ -12,6 +11,7 @@ import { SelectIssueHint } from "@/components/home/SelectIssueHint";
 import { VolNumberElements } from "@/components/home/VolNumberElements";
 import { BrowseButton } from "@/components/home/BrowseButton";
 import { useScrollAnimation } from "@/hooks/use-scroll-animation";
+import { motion } from "framer-motion";
 
 export default function Home() {
   // 创建引用
@@ -34,10 +34,10 @@ export default function Home() {
     dateOpacity,
     dateCurrentX
   } = useScrollAnimation(titleRef, {
-    scrollThreshold: 1000,
+    scrollThreshold: 200,
     showContentThreshold: 0.3,
     hideContentThreshold: 0.15,
-    smoothUpdateFactor: 0.5
+    smoothUpdateFactor: 0.3
   });
 
   // 管理当前选中的期数
@@ -55,15 +55,15 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen overflow-x-hidden bg-background">
-      {/* 顶部导航 - 独立放置确保最高层级 */}
+    <main className="min-h-screen h-[300vh] overflow-x-hidden bg-background">
+      {/* 顶部导航：z-31 */}
       <HeaderNav />
+
+      {/* 底部提示：z-31 */}
+      <FooterNav />
       
       {/* 固定的页面结构 - 包含除顶部导航外的所有元素 */}
-      <div className="fixed inset-0 flex flex-col z-20 pointer-events-none">
-        {/* 中间区域 - 用于对齐 */}
-        <div className="h-[88px]"></div> {/* 为HeaderNav留出空间 */}
-        
+      <div className="fixed inset-0 flex flex-col z-20 pointer-events-none">        
         {/* "Select the issue number"提示 - 固定在页面中间上方 */}
         <div className="absolute top-[30%] left-1/2 transform -translate-x-1/2 pointer-events-none"
              style={{ opacity: browseMode ? 0 : 1, transition: 'opacity 0.5s ease' }}>
@@ -71,33 +71,25 @@ export default function Home() {
         </div>
         
         {/* "Vol"和"54"标题 - 滚动时分别向左右两侧移动，放置在页面正中间 */}
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-auto" 
-             style={{ 
-               top: browseMode ? '50%' : '40%', 
-               transform: browseMode ? 'translateY(-50%)' : 'translateY(0)', 
-               transition: 'top 0.7s ease-in-out, transform 0.7s ease-in-out',
-               height: 'auto'
-             }}>
-          <VolNumberElements
-            volTransform={volTransform}
-            numberTransform={numberTransform}
-            elementsOpacity={elementsOpacity}
-            dateCurrentX={dateCurrentX}
-            dateOpacity={dateOpacity}
-            activeIssue={activeIssue}
-            onIssueChange={handleIssueChange}
-            browseMode={browseMode}
-          />
-        </div>
+        <VolNumberElements
+          volTransform={volTransform}
+          numberTransform={numberTransform}
+          elementsOpacity={elementsOpacity}
+          dateCurrentX={dateCurrentX}
+          dateOpacity={dateOpacity}
+          activeIssue={activeIssue}
+          onIssueChange={handleIssueChange}
+          browseMode={browseMode}
+          visibilityConfig={{
+            threshold: 150,
+            initialVisible: true,
+            fadeInDelay: 300,
+            fadeOutDelay: 300
+          }}
+        />
       </div>
       
-      {/* 底部提示 - 固定在底部，在一开始可见，滚动后消失 */}
-      <div className="fixed bottom-0 left-0 w-full z-31 transition-opacity duration-500"
-           style={{ opacity: (scrollProgress < 0.1 || browseMode) ? 0 : 1 }}>
-        <FooterNav />
-      </div>
-
-      {/* 模糊遮罩 - 在Vol和54之上，在Header之下 */}
+      {/* 模糊遮罩：z-30 */}
       <BlurMasks />
       
       {/* 浏览按钮 - 独立层级，保证在最上层，与HeaderNav同级，距离底部80px */}
@@ -113,9 +105,6 @@ export default function Home() {
           onBrowseClick={handleBrowseClick}
         />
       </div>
-
-      {/* 返回顶部按钮 */}
-      <BackToTopButton scrollProgress={scrollProgress} titleRef={titleRef} />
 
       {/* 可滚动的内容区域 */}
       <div className="min-h-screen flex flex-col">
@@ -161,9 +150,6 @@ export default function Home() {
             browseMode={browseMode}
           />
         </div>
-        
-        {/* 额外的内容空间 - 使页面可滚动 */}
-        <div className="h-[150vh]"></div>
       </div>
     </main>
   );

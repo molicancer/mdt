@@ -6,7 +6,7 @@
 /* Extra Large 变体 */
 @font-face {
   font-family: 'NewYork';
-  src: url('/fonts/NewYorkExtraLarge-Regular.otf') format('opentype');
+  src: url('/fonts/NewYorkExtraLargeRegular.otf') format('opentype');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
@@ -14,7 +14,7 @@
 
 @font-face {
   font-family: 'NewYork';
-  src: url('/fonts/NewYorkExtraLarge-Black.otf') format('opentype');
+  src: url('/fonts/NewYorkExtraLargeBlack.otf') format('opentype');
   font-weight: 900;
   font-style: normal;
   font-display: swap;
@@ -22,7 +22,7 @@
 
 @font-face {
   font-family: 'NewYork';
-  src: url('/fonts/NewYorkExtraLarge-Bold.otf') format('opentype');
+  src: url('/fonts/NewYorkExtraLargeBold.otf') format('opentype');
   font-weight: 700;
   font-style: normal;
   font-display: swap;
@@ -30,7 +30,7 @@
 
 @font-face {
   font-family: 'NewYork';
-  src: url('/fonts/NewYorkExtraLarge-Heavy.otf') format('opentype');
+  src: url('/fonts/NewYorkExtraLargeHeavy.otf') format('opentype');
   font-weight: 800;
   font-style: normal;
   font-display: swap;
@@ -38,7 +38,7 @@
 
 @font-face {
   font-family: 'NewYork';
-  src: url('/fonts/NewYorkExtraLarge-Medium.otf') format('opentype');
+  src: url('/fonts/NewYorkExtraLargeMedium.otf') format('opentype');
   font-weight: 500;
   font-style: normal;
   font-display: swap;
@@ -46,7 +46,7 @@
 
 @font-face {
   font-family: 'NewYork';
-  src: url('/fonts/NewYorkExtraLarge-Semibold.otf') format('opentype');
+  src: url('/fonts/NewYorkExtraLargeSemibold.otf') format('opentype');
   font-weight: 600;
   font-style: normal;
   font-display: swap;
@@ -55,7 +55,7 @@
 /* Large 变体 */
 @font-face {
   font-family: 'NewYorkLarge';
-  src: url('/fonts/NewYorkLarge-Regular.otf') format('opentype');
+  src: url('/fonts/NewYorkLargeRegular.otf') format('opentype');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
@@ -63,7 +63,7 @@
 
 @font-face {
   font-family: 'NewYorkLarge';
-  src: url('/fonts/NewYorkLarge-Medium.otf') format('opentype');
+  src: url('/fonts/NewYorkLargeMedium.otf') format('opentype');
   font-weight: 500;
   font-style: normal;
   font-display: swap;
@@ -71,7 +71,7 @@
 
 @font-face {
   font-family: 'NewYorkLarge';
-  src: url('/fonts/NewYorkLarge-Semibold.otf') format('opentype');
+  src: url('/fonts/NewYorkLargeSemibold.otf') format('opentype');
   font-weight: 600;
   font-style: normal;
   font-display: swap;
@@ -80,7 +80,7 @@
 /* Medium 变体 */
 @font-face {
   font-family: 'NewYorkMedium';
-  src: url('/fonts/NewYorkMedium-Regular.otf') format('opentype');
+  src: url('/fonts/NewYorkMediumRegular.otf') format('opentype');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
@@ -88,7 +88,7 @@
 
 @font-face {
   font-family: 'NewYorkMedium';
-  src: url('/fonts/NewYorkMedium-Bold.otf') format('opentype');
+  src: url('/fonts/NewYorkMediumBold.otf') format('opentype');
   font-weight: 700;
   font-style: normal;
   font-display: swap;
@@ -96,7 +96,7 @@
 
 @font-face {
   font-family: 'NewYorkMedium';
-  src: url('/fonts/NewYorkMedium-Heavy.otf') format('opentype');
+  src: url('/fonts/NewYorkMediumHeavy.otf') format('opentype');
   font-weight: 800;
   font-style: normal;
   font-display: swap;
@@ -104,7 +104,7 @@
 
 @font-face {
   font-family: 'NewYorkMedium';
-  src: url('/fonts/NewYorkMedium-Medium.otf') format('opentype');
+  src: url('/fonts/NewYorkMediumMedium.otf') format('opentype');
   font-weight: 500;
   font-style: normal;
   font-display: swap;
@@ -113,7 +113,7 @@
 /* Small 变体 */
 @font-face {
   font-family: 'NewYorkSmall';
-  src: url('/fonts/NewYorkSmall-Regular.otf') format('opentype');
+  src: url('/fonts/NewYorkSmallRegular.otf') format('opentype');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
@@ -121,7 +121,7 @@
 
 @font-face {
   font-family: 'NewYorkSmall';
-  src: url('/fonts/NewYorkSmall-Bold.otf') format('opentype');
+  src: url('/fonts/NewYorkSmallBold.otf') format('opentype');
   font-weight: 700;
   font-style: normal;
   font-display: swap;
@@ -129,7 +129,7 @@
 
 @font-face {
   font-family: 'NewYorkSmall';
-  src: url('/fonts/NewYorkSmall-Medium.otf') format('opentype');
+  src: url('/fonts/NewYorkSmallMedium.otf') format('opentype');
   font-weight: 500;
   font-style: normal;
   font-display: swap;
