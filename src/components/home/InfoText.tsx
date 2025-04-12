@@ -1,15 +1,12 @@
 import { FunctionComponent } from "react";
 import { motion } from "framer-motion";
-import { useScrollVisibility } from "@/hooks/use-scroll-visibility";
+import { useUIStore } from "@/store/uiStore";
+import { useAnimationStore } from "@/store/animationStore";
 
-interface InfoTextProps {
-  browseMode?: boolean;
-}
-
-export const InfoText: FunctionComponent<InfoTextProps> = ({ 
-  browseMode = false 
-}) => {
-  const isVisible = useScrollVisibility();
+export const InfoText: FunctionComponent = () => {
+  // 从状态存储获取所需状态
+  const isVisible = useAnimationStore(state => state.isVisible);
+  const { browseMode } = useUIStore();
 
   return (
     <motion.div 

@@ -1,21 +1,15 @@
 import { FunctionComponent } from "react";
 import { motion } from "framer-motion";
-import { useScrollVisibility } from "@/hooks/use-scroll-visibility";
+import { useUIStore } from "@/store/uiStore";
+import { useAnimationStore, useGlobalScrollVisibility } from "@/store/animationStore";
 
-interface BrowseButtonProps {
-  scrollProgress: number; // 滚动进度
-  activeIssue?: number; // 当前选中的期数
-  browseMode?: boolean; // 是否处于浏览模式
-  onBrowseClick?: () => void; // 浏览按钮点击事件
-}
-
-export const BrowseButton: FunctionComponent<BrowseButtonProps> = ({ 
-  activeIssue = 54,
-  browseMode = false,
-  onBrowseClick
-}) => {
-  // 使用 useScrollVisibility 钩子，与 HeroTitle 使用相同的阈值
-  const isVisible = useScrollVisibility();
+export const BrowseButton: FunctionComponent = () => {
+  // 使用全局滚动可见性（自动会初始化滚动监听）
+  useGlobalScrollVisibility();
+  
+  // 从状态存储获取所需状态
+  const isVisible = useAnimationStore(state => state.isVisible);
+  const { browseMode, activeIssue, toggleBrowseMode } = useUIStore();
   
   return (
     <motion.div 
@@ -33,9 +27,9 @@ export const BrowseButton: FunctionComponent<BrowseButtonProps> = ({
           className="text-white bg-black hover:bg-gray-800 rounded-full px-12 py-4 font-medium"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
-          onClick={onBrowseClick}
+          onClick={toggleBrowseMode}
         >
-          {browseMode ? "返回" : `浏览 Vol ${activeIssue}`}
+          {browseMode ? "返回" : `浏览 Vol ${activeIssue ?? '...'}`}
         </motion.button>
     </motion.div>
   );

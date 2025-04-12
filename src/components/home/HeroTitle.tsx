@@ -1,17 +1,14 @@
 import { forwardRef } from "react";
 import { motion } from "framer-motion";
-import { useScrollVisibility } from "@/hooks/use-scroll-visibility";
+import { useAnimationStore, useGlobalScrollVisibility } from "@/store/animationStore";
 
-interface HeroTitleProps {
-  titleTransform: number;    // 控制标题在Y轴上的位移距离
-  titleOpacity: number;      // 控制标题的透明度
-  isScrolling: boolean;      // 标记是否正在滚动
-  browseMode?: boolean;      // 是否处于浏览模式
-}
-
-export const HeroTitle = forwardRef<HTMLDivElement, HeroTitleProps>(
-  function HeroTitle({ titleTransform, titleOpacity, isScrolling, browseMode = false }, ref) {
-    const isVisible = useScrollVisibility();
+export const HeroTitle = forwardRef<HTMLDivElement>(
+  function HeroTitle(_, ref) {
+    // 使用全局滚动可见性
+    useGlobalScrollVisibility();
+    
+    // 从状态存储获取可见性状态
+    const isVisible = useAnimationStore(state => state.isVisible);
 
     return (
       <motion.div
