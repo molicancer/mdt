@@ -10,10 +10,14 @@ import { InfoText } from "@/components/home/InfoText";
 import { SelectIssueHint } from "@/components/home/SelectIssueHint";
 import { VolNumberElements } from "@/components/home/VolNumberElements";
 import { BrowseButton } from "@/components/home/BrowseButton";
+import { DebugPanel } from "@/components/debug/DebugPanel";
 import { useUpdateAnimationStore } from "@/hooks/use-update-animation-store";
 import { useGlobalScrollVisibility } from "@/store/animationStore";
 import { useAnimationStore } from "@/store/animationStore";
 import { Loader } from "@/components/ui/loader";
+
+// 是否显示调试面板，生产环境下默认为false
+const SHOW_DEBUG_PANEL = process.env.NODE_ENV === 'development';
 
 export default function Home() {
   // 创建页面加载状态
@@ -25,9 +29,11 @@ export default function Home() {
   // 初始化全局滚动可见性，阈值设为20
   useGlobalScrollVisibility(20);
   
-  // 从animationStore获取重置方法
+  // 从animationStore获取状态和方法
   const updateAnimationValues = useAnimationStore(state => state.updateAnimationValues);
   const setActiveIssueOffset = useAnimationStore(state => state.setActiveIssueOffset);
+  const isInitialStage = useAnimationStore(state => state.isInitialStage);
+  const setInitialStage = useAnimationStore(state => state.setInitialStage);
   
   // 页面加载和刷新时进行处理
   useEffect(() => {
@@ -42,8 +48,8 @@ export default function Home() {
       titleOpacity: 1,
       volTransform: 0,
       numberTransform: 0,
-      elementsOpacity: 1,
-      dateOpacity: 1,
+      elementsOpacity: 0, // 初始阶段隐藏期数元素
+      dateOpacity: 0, // 初始阶段隐藏日期
       dateCurrentX: 0
     });
     
@@ -57,6 +63,25 @@ export default function Home() {
     
     return () => clearTimeout(timer);
   }, [updateAnimationValues, setActiveIssueOffset]);
+  
+  // 监听滚动事件，当用户开始滚动时退出初始阶段
+  useEffect(() => {
+    if (!isPageLoaded) return;
+    
+    const handleScroll = () => {
+      if (isInitialStage && window.scrollY > 20) {
+        // 当用户开始滚动时，退出初始阶段，显示其他元素
+        setInitialStage(false);
+        updateAnimationValues({
+          elementsOpacity: 1,
+          dateOpacity: 1
+        });
+      }
+    };
+    
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [isInitialStage, setInitialStage, updateAnimationValues, isPageLoaded]);
   
   // 使用新的钩子，自动将动画值同步到Zustand
   useUpdateAnimationStore(titleRef, {
@@ -73,39 +98,42 @@ export default function Home() {
 
   return (
     <main className="min-h-screen h-[300vh] overflow-x-hidden bg-background">
-      {/* 顶部导航：z-31 */}
-      <HeaderNav />
+      {/* 顶部导航：z-31 - 只在非初始阶段显示 */}
+      {!isInitialStage && <HeaderNav />}
 
-      {/* 底部提示：z-31 */}
+      {/* 底部提示：z-31 - 始终显示 */}
       <FooterNav />
 
-      {/* "Select the issue number"提示 - 现在已将样式内置到组件 */}
-      <SelectIssueHint />
+      {/* "Select the issue number"提示 - 只在非初始阶段显示 */}
+      {!isInitialStage && <SelectIssueHint />}
       
       {/* "Vol"和"54"标题 - 现在使用animationStore获取动画状态 */}
       <VolNumberElements
         visibilityConfig={{
           threshold: 150,
-          initialVisible: true,
+          initialVisible: !isInitialStage, // 初始阶段不显示
           fadeInDelay: 300,
           fadeOutDelay: 300
         }}
       />
       
-      {/* 模糊遮罩：z-30 */}
-      <BlurMasks />
+      {/* 模糊遮罩：z-30 - 只在非初始阶段显示 */}
+      {!isInitialStage && <BlurMasks />}
       
-      {/* 浏览按钮 - 独立层级，保证在最上层，与HeaderNav同级 */}
-      <BrowseButton />
+      {/* 浏览按钮 - 只在非初始阶段显示 */}
+      {!isInitialStage && <BrowseButton />}
 
-      {/* 大标题区域 - 现在不需要传入动画属性，组件会从Zustand获取 */}
+      {/* 大标题区域 - 始终显示 */}
       <HeroTitle ref={titleRef} />
       
-      {/* 信息文本区域 */}
+      {/* 信息文本区域 - 始终显示 */}
       <InfoText />
 
-      {/* 中间内容区域 - 现在从animationStore获取scrollProgress */}
-      <ContentSection />
+      {/* 中间内容区域 - 只在非初始阶段显示 */}
+      {!isInitialStage && <ContentSection />}
+
+      {/* 调试面板 - 只在开发环境显示 */}
+      {SHOW_DEBUG_PANEL && <DebugPanel />}
     </main>
   );
 }
