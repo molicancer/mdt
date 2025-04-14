@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { useUIStore } from "@/store/uiStore";
 import { useAnimationStore } from "@/store/animationStore";
+import { SCROLL_THRESHOLDS } from "@/config/scrollThresholds";
 
 export function SelectIssueHint() {
   // 从Zustand获取状态
@@ -12,7 +13,7 @@ export function SelectIssueHint() {
       className="fixed z-31 top-40 left-1/2 transform -translate-x-1/2 pointer-events-none"
       initial={{ opacity: 0 }}
       animate={{ 
-        opacity: (scrollProgress > 0.1 && !browseMode) ? 1 : 0
+        opacity: (scrollProgress > SCROLL_THRESHOLDS.SELECT_HINT_SHOW && !browseMode) ? 1 : 0
       }}
       transition={{
         duration: 0.5,

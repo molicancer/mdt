@@ -1,12 +1,9 @@
 import { forwardRef } from "react";
 import { motion } from "framer-motion";
-import { useAnimationStore, useGlobalScrollVisibility } from "@/store/animationStore";
+import { useAnimationStore } from "@/store/animationStore";
 
 export const HeroTitle = forwardRef<HTMLDivElement>(
   function HeroTitle(_, ref) {
-    // 使用全局滚动可见性
-    useGlobalScrollVisibility();
-    
     // 从状态存储获取可见性状态
     const isVisible = useAnimationStore(state => state.isVisible);
 

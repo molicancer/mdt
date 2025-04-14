@@ -9,7 +9,14 @@ export const BrowseButton: FunctionComponent = () => {
   
   // 从状态存储获取所需状态
   const isVisible = useAnimationStore(state => state.isVisible);
-  const { browseMode, activeIssue, toggleBrowseMode } = useUIStore();
+  const { browseMode, activeIssue, toggleBrowseMode, scrollLocked } = useUIStore();
+  
+  // 点击按钮切换状态
+  const handleToggle = () => {
+    // toggleBrowseMode已在store内同时设置browseMode和scrollLocked
+    toggleBrowseMode();
+    console.log(`${browseMode ? '退出' : '进入'}浏览模式，滚动${scrollLocked ? '已锁定' : '已解锁'}`);
+  };
   
   return (
     <motion.div 
@@ -27,7 +34,7 @@ export const BrowseButton: FunctionComponent = () => {
           className="text-white bg-black hover:bg-gray-800 rounded-full px-12 py-4 font-medium"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
-          onClick={toggleBrowseMode}
+          onClick={handleToggle}
         >
           {browseMode ? "返回" : `浏览 Vol ${activeIssue ?? '...'}`}
         </motion.button>

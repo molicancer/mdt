@@ -1,5 +1,8 @@
 import { create } from "zustand";
 import { useEffect } from "react";
+import { useScrollStore } from "./scrollStore";
+import { SCROLL_THRESHOLDS } from "@/config/scrollThresholds";
+import { useUIStore } from "./uiStore";
 
 interface AnimationState {
   // 滚动相关状态
@@ -69,7 +72,7 @@ export const useAnimationStore = create<AnimationState>((set) => ({
     elementsOpacity: 1, // 元素完全不透明
     dateOpacity: 1, // 日期完全不透明
     dateCurrentX: 50, // 日期X位置
-    scrollProgress: 100, // 滚动进度100%
+    scrollProgress: SCROLL_THRESHOLDS.FIRST_STAGE_COMPLETE * 5, // 滚动进度超过第一阶段
     isScrolling: false, // 不处于滚动状态
     isInitialStage: false // 不再处于初始阶段
   }),
@@ -84,37 +87,36 @@ export const useAnimationStore = create<AnimationState>((set) => ({
     elementsOpacity: 1, // 元素完全不透明
     dateOpacity: 0, // 日期在浏览模式下不可见
     dateCurrentX: 50,
-    scrollProgress: 100,
+    scrollProgress: SCROLL_THRESHOLDS.FIRST_STAGE_COMPLETE * 5,
     isScrolling: false,
     isInitialStage: false // 不再处于初始阶段
   })
 }));
 
-// 新增：全局滚动可见性钩子，封装useScrollVisibility逻辑
-export function useGlobalScrollVisibility(threshold = 20) {
+// 新增：全局滚动可见性钩子，使用scrollStore
+export function useGlobalScrollVisibility(initialVisible = true) {
   const setVisibility = useAnimationStore(state => state.setVisibility);
   const isVisible = useAnimationStore(state => state.isVisible);
+  const { scrollDirection } = useScrollStore();
+  const scrollLocked = useUIStore(state => state.scrollLocked);
   
+  // 监听scrollStore中的滚动方向变化
   useEffect(() => {
-    const handleScroll = () => {
-      const scrollY = window.scrollY;
-      
-      // 根据滚动位置更新可见性
-      if (scrollY > threshold && isVisible) {
-        setVisibility(false);
-      } else if (scrollY <= threshold && !isVisible) {
-        setVisibility(true);
-      }
-    };
-
-    // 添加事件监听
-    window.addEventListener('scroll', handleScroll, { passive: true });
-
-    // 清理函数
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-    };
-  }, [threshold, isVisible, setVisibility]);
+    // 如果滚动被锁定，不更新可见性
+    if (scrollLocked) return;
+    
+    // 根据滚动方向更新可见性
+    if (scrollDirection === 'down' && isVisible) {
+      setVisibility(false);
+    } else if (scrollDirection === 'up' && !isVisible) {
+      setVisibility(true);
+    }
+  }, [scrollDirection, isVisible, setVisibility, scrollLocked]);
+  
+  // 初始化可见性状态
+  useEffect(() => {
+    setVisibility(initialVisible);
+  }, [initialVisible, setVisibility]);
   
   return isVisible;
 } 

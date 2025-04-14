@@ -1,28 +1,19 @@
 "use client";
 
 import { useEffect } from "react";
-import { useScrollVisibility } from "@/hooks/use-scroll-visibility";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 import { useUIStore } from "@/store/uiStore";
 import { useAnimationStore } from "@/store/animationStore";
 import React from "react";
 import { Issue } from "@/store/uiStore"; // 使用从 uiStore 导出的 Issue 类型
-
-// 检查URL是否包含直接进入第二阶段的标记
-const shouldEnterStage2 = (): boolean => {
-  if (typeof window === 'undefined') return false;
-  
-  // 检查URL哈希中是否包含s2标记
-  return window.location.hash.includes('&s2');
-};
-
-// 检查URL是否包含直接进入浏览模式的标记
-const shouldEnterBrowseMode = (): boolean => {
-  if (typeof window === 'undefined') return false;
-  
-  // 检查URL哈希中是否包含browse标记
-  return window.location.hash.includes('&browse');
-};
+import { useScrollWheel } from "@/hooks/use-scroll-wheel";
+import { useScrollStore } from "@/store/scrollStore";
+import { 
+  extractNumberFromSlug, 
+  getIssueNumberFromURL, 
+  shouldEnterStage2, 
+  shouldEnterBrowseMode 
+} from "@/lib/utils";
 
 // 配置常量
 const CONFIG = {
@@ -50,11 +41,7 @@ const CONFIG = {
   },
   // 默认配置
   defaults: {
-    threshold: 100,
-    initialVisible: true,
-    fadeInDelay: 300, // 单位：毫秒
-    fadeOutDelay: 300, // 单位：毫秒
-    activeIssue: 54
+    initialVisible: true
   }
 } as const;
 
@@ -66,49 +53,12 @@ const getItemHeight = (): number => {
 // 类型定义
 interface VolNumberElementsProps {
   visibilityConfig?: {
-    threshold?: number; // 可见性阈值
     initialVisible?: boolean;
-    fadeInDelay?: number;
-    fadeOutDelay?: number;
   };
   activeIssue?: number | null; // 当前活动期数
   onIssueChange?: (issueNumber: number) => void; // 期数变更回调
   browseMode?: boolean; // 是否处于浏览模式
 }
-
-// 从URL slug中提取期数
-export const extractNumberFromSlug = (slug: string): number => {
-  // 从"vol54"格式中提取"54"
-  const match = slug.match(/vol(\d+)/i);
-  if (match && match[1]) {
-    return parseInt(match[1], 10);
-  }
-  return 0; // 默认值
-};
-
-// 获取当前URL中的期数
-const getIssueNumberFromURL = (): number | null => {
-  if (typeof window === 'undefined') return null;
-  
-  // 首先检查URL路径
-  const pathParts = window.location.pathname.split('/');
-  // 检查URL中是否有类似"vol54"的部分
-  for (const part of pathParts) {
-    const match = part.match(/vol(\d+)/i);
-    if (match && match[1]) {
-      return parseInt(match[1], 10);
-    }
-  }
-  
-  // 然后检查URL哈希
-  const hash = window.location.hash;
-  const hashMatch = hash.match(/#vol(\d+)/i);
-  if (hashMatch && hashMatch[1]) {
-    return parseInt(hashMatch[1], 10);
-  }
-  
-  return null;
-};
 
 // 计算动画延迟时间
 const calculateDelay = (distanceFromActive: number): number => {
@@ -119,6 +69,9 @@ const calculateDelay = (distanceFromActive: number): number => {
 // 获取要显示的期数
 const getDisplayIssues = (issues: Issue[], activeIssue: number): Issue[] => {
   if (!issues.length) return [];
+  
+  // 如果activeIssue为0（尚未设置），则直接返回所有期数
+  if (activeIssue === 0) return [...issues].sort((a, b) => b.number - a.number);
   
   // 按照期数排序（降序）
   const sortedIssues = [...issues].sort((a, b) => b.number - a.number);
@@ -200,10 +153,7 @@ const fetchIssues = async (): Promise<Issue[]> => {
 
 export function VolNumberElements({ 
   visibilityConfig = {
-    threshold: CONFIG.defaults.threshold,
     initialVisible: CONFIG.defaults.initialVisible,
-    fadeInDelay: CONFIG.defaults.fadeInDelay,
-    fadeOutDelay: CONFIG.defaults.fadeOutDelay
   },
   activeIssue: externalActiveIssue,
   onIssueChange: externalOnIssueChange,
@@ -238,21 +188,48 @@ export function VolNumberElements({
   const shouldBrowse = shouldEnterBrowseMode();
   // 如果URL包含浏览模式标记，则强制启用浏览模式
   const browseMode = shouldBrowse ? true : (externalBrowseMode !== undefined ? externalBrowseMode : storeBrowseMode);
-  const storeActiveIssueValue = storeActiveIssue ?? CONFIG.defaults.activeIssue;
+  // 根据store中的activeIssue和issues动态确定当前使用的期数
+  const getStoreActiveIssue = () => {
+    // 如果有活动期数，则直接使用
+    if (storeActiveIssue !== null) return storeActiveIssue;
+    
+    // 否则尝试从issues中获取最新期数
+    if (issues.length > 0) {
+      const latestIssue = issues.find(issue => issue.isLatest);
+      return latestIssue ? latestIssue.number : issues[0].number;
+    }
+    
+    // 如果以上都没有，返回0表示尚未加载
+    return 0;
+  };
+  const storeActiveIssueValue = getStoreActiveIssue();
   
   // 检查是否应该直接进入第二阶段
   const enterStage2 = React.useRef(shouldEnterStage2());
   
-  // 使用 useScrollVisibility 钩子，传入配置
-  const isVisible = useScrollVisibility({
-    threshold: visibilityConfig?.threshold ?? CONFIG.defaults.threshold,
-    initialVisible: true // 总是从可见状态开始，让setStage2State控制实际可见性
+  // 获取滚动存储中的状态和方法
+  const isVisible = useScrollStore(state => state.isVisible);
+  const setVisibility = useScrollStore(state => state.setVisibility);
+  
+  // 使用 useScrollWheel 钩子初始化wheel事件监听
+  useScrollWheel({
+    initialVisible: visibilityConfig?.initialVisible,
   });
-
+  
+  // 非初始阶段时确保组件可见
+  useEffect(() => {
+    if (!isInitialStage) {
+      setVisibility(true);
+    }
+  }, [isInitialStage, setVisibility]);
+  
+  // 确定最终的可见性状态
+  const finalVisibility = isInitialStage ? isVisible : true;
+  
   // 在组件挂载时更新当前活动期数
   useEffect(() => {
     // 确保初始值与存储同步
-    if (currentActiveIssue !== storeActiveIssueValue) {
+    if (currentActiveIssue !== storeActiveIssueValue && storeActiveIssueValue !== 0) {
       setCurrentActiveIssue(storeActiveIssueValue);
     }
   }, [currentActiveIssue, setCurrentActiveIssue, storeActiveIssueValue]);
@@ -306,8 +283,10 @@ export function VolNumberElements({
   // 同步外部传入的activeIssue
   useEffect(() => {
     if (externalActiveIssue !== undefined) {
-      const newActiveIssue = externalActiveIssue ?? (issues.length > 0 ? (issues.find(issue => issue.isLatest)?.number || issues[0].number) : CONFIG.defaults.activeIssue);
-      setCurrentActiveIssue(newActiveIssue);
+      const newActiveIssue = externalActiveIssue ?? (issues.length > 0 ? (issues.find(issue => issue.isLatest)?.number || issues[0].number) : 0);
+      if (newActiveIssue !== 0) {
+        setCurrentActiveIssue(newActiveIssue);
+      }
     } else if (storeActiveIssue !== null) {
       setCurrentActiveIssue(storeActiveIssue);
     }
@@ -398,7 +377,9 @@ export function VolNumberElements({
     if (typeof window === 'undefined') return;
     
     // 处理从URL哈希进入的情况
-    if (window.location.hash.match(/#vol\d+/i)) {
+    const hashHasIssueNumber = getIssueNumberFromURL() !== null;
+    
+    if (hashHasIssueNumber) {
       // 如果是第二阶段进入，直接设置第二阶段状态
       if (enterStage2.current) {
         console.log('直接进入第二阶段显示');
@@ -425,8 +406,8 @@ export function VolNumberElements({
   }, [setStage2State]);
   
   // 使用条件渲染而不是提前返回
-  // 如果是初始阶段且配置为不可见，则返回null
-  if (isInitialStage && !visibilityConfig.initialVisible) {
+  // 如果是初始阶段且不可见，则返回null
+  if (isInitialStage && !finalVisibility) {
     return null;
   }
   
@@ -434,9 +415,12 @@ export function VolNumberElements({
     <motion.div 
       className="fixed inset-0 flex items-center justify-center z-20 pointer-events-none"
       initial={{ opacity: 0 }}
-      animate={{ opacity: isVisible ? 1 : 0 }}
+      animate={{ 
+        // 只在初始阶段（isInitialStage为true且initialVisible为false）时隐藏，其他情况都显示
+        opacity: (!isInitialStage || visibilityConfig.initialVisible) ? 1 : 0 
+      }}
       transition={{ 
-        duration: (isVisible ? (visibilityConfig?.fadeInDelay ?? 300) : (visibilityConfig?.fadeOutDelay ?? 300)) / 1000,
+        duration: 0.3,
         ease: CONFIG.animation.ease
       }}
     >
@@ -451,7 +435,7 @@ export function VolNumberElements({
         <DateInfo 
           dateCurrentX={dateCurrentX} 
           dateOpacity={dateOpacity}
-          issueData={issues.find(issue => issue.number === currentActiveIssue)}
+          issueData={currentActiveIssue === 0 ? undefined : issues.find(issue => issue.number === currentActiveIssue)}
           browseMode={browseMode}
         />
 
@@ -532,15 +516,20 @@ function IssuesList({
   // 动态计算每个项的高度
   const itemHeight = getItemHeight();
   
+  // 如果activeIssue为0，显示所有期数并选择第一个作为活动状态
+  const effectiveActiveIssue = activeIssue === 0 && issues.length > 0 ? 
+    (issues.find(issue => issue.isLatest)?.number || issues[0].number) : 
+    activeIssue;
+  
   const displayIssues = browseMode 
-    ? issues.filter(issue => issue.number === activeIssue)
-    : getDisplayIssues(issues, activeIssue);
+    ? issues.filter(issue => issue.number === effectiveActiveIssue)
+    : getDisplayIssues(issues, effectiveActiveIssue);
     
   const activeBrowseTransform = CONFIG.layout.activeBrowseTransform;
   
   // 计算垂直位置偏移量
   // 找出当前激活项在displayIssues中的索引
-  const activeIndex = displayIssues.findIndex(issue => issue.number === activeIssue);
+  const activeIndex = displayIssues.findIndex(issue => issue.number === effectiveActiveIssue);
   
   // 计算中心对齐的偏移值：
   // 如果是第一项(idx=0)，不需要偏移
@@ -573,7 +562,7 @@ function IssuesList({
       <LayoutGroup id="issues-group">
         <AnimatePresence>
           {displayIssues.map((issue) => {
-            const isActive = issue.number === activeIssue;
+            const isActive = issue.number === effectiveActiveIssue;
             
             // 根据是否为当前选中的期数定义字体大小
             const fontSize = isActive ? 180 : 130; // 使用与CONFIG.base.fontSize一致的大小
@@ -609,8 +598,8 @@ function IssuesList({
                     ease
                   },
                   fontSize: {
-                    duration: 0.5,
-                    ease: [0.25, 0.1, 0.25, 1.0]
+                    duration: 0.8,
+                    ease: [0.16, 1, 0.3, 1]  // 使用更平滑的贝塞尔曲线
                   },
                   x: {
                     duration,

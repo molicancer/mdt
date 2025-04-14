@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { IssueContent } from "@/types/issue";
 import { getAllIssues, getIssueByNumber } from "@/lib/api/issueApi";
 import { useAnimationStore } from "@/store/animationStore";
+import { SCROLL_THRESHOLDS } from "@/config/scrollThresholds";
 
 // 无需传递props的组件
 export const ContentSection = forwardRef<HTMLDivElement>(
@@ -153,7 +154,7 @@ export const ContentSection = forwardRef<HTMLDivElement>(
           opacity: 0,
         }}
         animate={{ 
-          opacity: browseMode ? 1 : (scrollProgress > 0.2 ? 1 : 0),
+          opacity: browseMode ? 1 : (scrollProgress > SCROLL_THRESHOLDS.CONTENT_SHOW ? 1 : 0),
         }}
         transition={{ 
           duration: 0.7,

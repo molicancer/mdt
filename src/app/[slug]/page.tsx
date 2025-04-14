@@ -1,14 +1,5 @@
 import { redirect } from 'next/navigation';
-
-// 在服务器组件中重新实现提取期数的函数
-function extractNumberFromSlug(slug: string): number {
-  // 从"vol54"格式中提取"54"
-  const match = slug.match(/vol(\d+)/i);
-  if (match && match[1]) {
-    return parseInt(match[1], 10);
-  }
-  return 0; // 默认值
-}
+import { extractNumberFromSlug } from '@/lib/utils';
 
 // 定义页面参数类型
 interface IssuePageProps {
@@ -35,11 +26,11 @@ export default function IssuePage({ params }: IssuePageProps) {
   // 提取slug
   const { slug } = params;
 
-  // 如果是期数格式 (volXX)，重定向到主页并带上期数参数
-  if (slug.match(/^vol\d+$/i)) {
-    // 提取期数
-    const issueNumber = extractNumberFromSlug(slug);
-    
+  // 检查是否匹配期数格式
+  const issueNumber = extractNumberFromSlug(slug);
+  
+  // 如果是期数格式，重定向到主页并带上期数参数
+  if (issueNumber > 0) {    
     // 重定向到首页，带上期数和阶段标记
     // vol{number} - 表示期数
     // s2 - 表示直接进入第二阶段(stage 2)

@@ -1,5 +1,6 @@
 import { IssueContent } from "@/types/issue";
 import { issueContents } from "@/data/issueContents";
+import { extractNumberFromSlug } from '@/lib/utils';
 
 // 作者信息缓存，避免重复请求
 const authorCache: Record<number, string> = {};
@@ -123,18 +124,6 @@ export async function getLatestIssue(): Promise<IssueContent | null> {
     const sortedIssues = [...issueContents].sort((a, b) => b.number - a.number);
     return sortedIssues[0] || null;
   }
-}
-
-/**
- * 从slug中提取期数
- */
-function extractNumberFromSlug(slug: string): number {
-  // 从"vol54"格式中提取"54"
-  const match = slug.match(/vol(\d+)/i);
-  if (match && match[1]) {
-    return parseInt(match[1], 10);
-  }
-  return 0; // 默认值
 }
 
 /**

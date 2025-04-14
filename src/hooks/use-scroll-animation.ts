@@ -1,12 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-
-// 缓动函数
-export const easeOutExpo = (t: number) => (t === 1 ? 1 : 1 - Math.pow(2, -10 * t));
+import { useScrollStore } from "@/store/scrollStore";
+import { SCROLL_THRESHOLDS, calculateTransform, calculateOpacity } from "@/config/scrollThresholds";
+import { useUIStore } from "@/store/uiStore";
 
 interface ScrollAnimationConfig {
-  scrollThreshold?: number; // 滚动阈值
-  showContentThreshold?: number; // 显示内容的阈值
-  hideContentThreshold?: number; // 隐藏内容的阈值
   smoothUpdateFactor?: number; // 平滑更新因子
 }
 
@@ -19,7 +16,7 @@ interface ScrollAnimationState {
   titleOpacity: number; // 标题透明度
   textOpacity: number; // 文字透明度
   volTransform: number; // Vol变换量
-  numberTransform: number; // 54变换量
+  numberTransform: number; // 期数变换量
   elementsOpacity: number; // 元素透明度
   dateOpacity: number; // 日期透明度
   dateCurrentX: number; // 日期当前X位置
@@ -32,31 +29,36 @@ export function useScrollAnimation(
 ): ScrollAnimationState {
   // 默认配置值
   const {
-    scrollThreshold = 500,
-    showContentThreshold = 0.6,
-    hideContentThreshold = 0.3,
     smoothUpdateFactor = 0.5,
   } = config;
 
-  // 状态
-  const [scrollY, setScrollY] = useState(0);
+  // 从scrollStore获取滚动状态
+  const scrollY = useScrollStore(state => state.scrollY);
+  const isScrolling = useScrollStore(state => state.isScrolling);
+  const scrollDirection = useScrollStore(state => state.scrollDirection);
+  
+  // 从uiStore获取滚动锁定状态
+  const scrollLocked = useUIStore(state => state.scrollLocked);
+  
+  // 本地状态
   const [scrollProgress, setScrollProgress] = useState(0);
   const [contentVisible, setContentVisible] = useState(false);
-  const [isScrolling, setIsScrolling] = useState(false);
 
   // 引用
-  const scrollTimeout = useRef<NodeJS.Timeout | null>(null);
   const animationFrameId = useRef<number | null>(null);
-  const lastScrollY = useRef(0);
   const targetScrollProgress = useRef(0);
+  const accumulatedWheelDelta = useRef(0);
 
   // 动画值常量
-  const moveDistance = 380; // Vol和54的移动距离
+  const moveDistance = 380; // Vol和期数的移动距离
   const dateInitialX = -600; // 日期初始X位置
   const dateFinalX = -moveDistance; // 日期最终X位置
 
   // 使用requestAnimationFrame平滑更新状态
   useEffect(() => {
+    // 如果滚动被锁定，不启动动画循环
+    if (scrollLocked) return;
+    
     const updateScrollValues = () => {
       // 平滑过渡到目标滚动进度
       const currentProgress = scrollProgress;
@@ -85,274 +87,79 @@ export function useScrollAnimation(
         cancelAnimationFrame(animationFrameId.current);
       }
     };
-  }, [scrollProgress, smoothUpdateFactor]);
+  }, [scrollProgress, smoothUpdateFactor, scrollLocked]);
 
-  // 监听滚动事件，计算目标滚动进度
-  useEffect(() => {
-    const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-      lastScrollY.current = currentScrollY;
-      setScrollY(currentScrollY);
-      
-      // 计算滚动进度
-      const progress = Math.min(currentScrollY / scrollThreshold, 1);
-      // 更新目标进度，而不是直接更新状态
-      targetScrollProgress.current = progress;
-      
-      // 设置滚动状态
-      setIsScrolling(true);
-      
-      // 当滚动到一定程度时显示中间内容
-      if (progress > showContentThreshold && !contentVisible) {
-        setContentVisible(true);
-      } else if (progress < hideContentThreshold && contentVisible) {
-        setContentVisible(false);
-      }
-      
-      // 清除之前的定时器，重置超时
-      if (scrollTimeout.current) {
-        clearTimeout(scrollTimeout.current);
-      }
-      
-      // 设置新的定时器
-      scrollTimeout.current = setTimeout(() => {
-        setIsScrolling(false);
-        
-        // 如果滚动进度在中间位置，自动完成动画
-        if (progress > 0.1 && progress < 0.3) {
-          // 自动滚动到第一阶段结束位置
-          window.scrollTo({
-            top: scrollThreshold * 0.2,
-            behavior: 'smooth'
-          });
-        } else if (progress >= 0.3 && progress < 0.5) {
-          // 停留在第二阶段
-          window.scrollTo({
-            top: scrollThreshold * 0.4,
-            behavior: 'smooth'
-          });
-        } else if (progress >= 0.5 && progress < 0.8) {
-          // 自动滚动到第三阶段
-          window.scrollTo({
-            top: scrollThreshold * 0.6,
-            behavior: 'smooth'
-          });
-        } else if (progress < 0.05) {
-          // 确保非常接近顶部时，强制回到顶部并重置状态
-          targetScrollProgress.current = 0;
-          setScrollY(0);
-          // 确保大标题立即显示，处理null情况
-          const titleElement = titleRef.current;
-          if (titleElement) {
-            titleElement.style.opacity = '1';
-            titleElement.style.transform = 'translateY(0)';
-          }
-        }
-      }, 100); // 减少超时时间，提高响应性
-    };
-
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-      if (scrollTimeout.current) {
-        clearTimeout(scrollTimeout.current);
-      }
-    };
-  }, [contentVisible, scrollThreshold, showContentThreshold, hideContentThreshold, titleRef]);
-
-  // 处理鼠标滚轮事件，实现更好的swipe效果
+  // 监听wheel事件，累积滚动量并计算进度
   useEffect(() => {
     const handleWheel = (e: WheelEvent) => {
-      // 如果处于第一阶段和第二阶段之间的过渡区域
-      if (scrollProgress > 0.15 && scrollProgress < 0.25) {
-        // 减缓滚动速度，创造阻尼感
-        e.preventDefault();
-        
-        // 向下滚动，进入第二阶段
-        if (e.deltaY > 0 && e.deltaY > 30) {
-          window.scrollTo({
-            top: scrollThreshold * 0.4, // 直接滚动到第二阶段中心
-            behavior: 'smooth'
-          });
-        } 
-        // 向上滚动，回到第一阶段
-        else if (e.deltaY < 0 && e.deltaY < -30) {
-          window.scrollTo({
-            top: 0,
-            behavior: 'smooth'
-          });
-        }
-      }
+      // 如果滚动被锁定，不处理wheel事件
+      if (scrollLocked) return;
       
-      // 如果处于第二阶段和第三阶段之间的过渡区域
-      else if (scrollProgress > 0.45 && scrollProgress < 0.55) {
-        e.preventDefault();
-        
-        // 向下滚动，进入第三阶段
-        if (e.deltaY > 0 && e.deltaY > 30) {
-          window.scrollTo({
-            top: scrollThreshold * 0.6, // 仅滚动到第三阶段的开始
-            behavior: 'smooth'
-          });
-        } 
-        // 向上滚动，回到第二阶段
-        else if (e.deltaY < 0 && e.deltaY < -30) {
-          window.scrollTo({
-            top: scrollThreshold * 0.4, // 回到第二阶段中心
-            behavior: 'smooth'
-          });
-        }
-      }
+      // 累积deltaY值，用于计算虚拟滚动量
+      accumulatedWheelDelta.current += e.deltaY;
       
-      // 处理起始状态的向下滚动
-      else if (scrollProgress < 0.1 && e.deltaY > 0) {
-        e.preventDefault();
-        window.scrollTo({
-          top: scrollThreshold * 0.4, // 直接滚动到第二阶段
-          behavior: 'smooth'
-        });
-      }
+      // 限制累积值范围
+      accumulatedWheelDelta.current = Math.max(0, Math.min(100, accumulatedWheelDelta.current));
       
-      // 处理滚动到第三阶段后的行为，阻止继续滚动
-      else if (scrollProgress > 0.6 && e.deltaY > 0) {
-        // 阻止继续向下滚动
-        e.preventDefault();
-      }
+      // 计算滚动进度比例，范围0-1
+      const progress = accumulatedWheelDelta.current / 100;
+      targetScrollProgress.current = progress;
       
-      // 处理已滚动状态的向上滚动
-      else if (scrollProgress > 0.6 && e.deltaY < 0) {
-        e.preventDefault();
-        window.scrollTo({
-          top: scrollThreshold * 0.4, // 回到第二阶段
-          behavior: 'smooth'
-        });
+      // 当滚动到一定程度时显示中间内容
+      if (progress > 0.6 && !contentVisible) {
+        setContentVisible(true);
+      } else if (progress < 0.3 && contentVisible) {
+        setContentVisible(false);
       }
     };
 
-    window.addEventListener('wheel', handleWheel, { passive: false });
+    window.addEventListener('wheel', handleWheel, { passive: true });
     
     return () => {
       window.removeEventListener('wheel', handleWheel);
     };
-  }, [scrollProgress, scrollThreshold]);
-  
-  // 添加触摸事件处理，优化触摸板滚动体验
+  }, [contentVisible, scrollLocked]);
+
+  // 监听滚动方向，当向上滚动时减少累积量
   useEffect(() => {
-    let touchStartY = 0;
-    let touchEndY = 0;
+    // 如果滚动被锁定，不处理滚动方向变化
+    if (scrollLocked) return;
     
-    const handleTouchStart = (e: TouchEvent) => {
-      touchStartY = e.touches[0].clientY;
-    };
-    
-    const handleTouchMove = (e: TouchEvent) => {
-      touchEndY = e.touches[0].clientY;
-    };
-    
-    const handleTouchEnd = () => {
-      const diff = touchEndY - touchStartY;
-      const threshold = 30; // 设置较小的阈值，提高灵敏度
-      
-      // 根据当前滚动位置和滑动方向决定目标位置
-      
-      // 第一阶段
-      if (scrollProgress < 0.15) {
-        // 向上滑动(第一阶段 -> 第二阶段)
-        if (diff < -threshold) {
-          window.scrollTo({
-            top: scrollThreshold * 0.4, // 滚动到第二阶段中心
-            behavior: 'smooth'
-          });
-        }
-      } 
-      // 第一和第二阶段之间
-      else if (scrollProgress >= 0.15 && scrollProgress < 0.25) {
-        if (diff < -threshold) {
-          // 向上滑动(进入第二阶段)
-          window.scrollTo({
-            top: scrollThreshold * 0.4,
-            behavior: 'smooth'
-          });
-        } else if (diff > threshold) {
-          // 向下滑动(回到第一阶段)
-          window.scrollTo({
-            top: 0,
-            behavior: 'smooth'
-          });
-        }
-      }
-      // 第二阶段
-      else if (scrollProgress >= 0.25 && scrollProgress < 0.45) {
-        if (diff < -threshold) {
-          // 向上滑动(第二阶段 -> 第三阶段)
-          window.scrollTo({
-            top: scrollThreshold * 0.6,
-            behavior: 'smooth'
-          });
-        } else if (diff > threshold) {
-          // 向下滑动(第二阶段 -> 第一阶段)
-          window.scrollTo({
-            top: 0,
-            behavior: 'smooth'
-          });
-        }
-      }
-      // 第二和第三阶段之间
-      else if (scrollProgress >= 0.45 && scrollProgress < 0.55) {
-        if (diff < -threshold) {
-          // 向上滑动(进入第三阶段)
-          window.scrollTo({
-            top: scrollThreshold * 0.6,
-            behavior: 'smooth'
-          });
-        } else if (diff > threshold) {
-          // 向下滑动(回到第二阶段)
-          window.scrollTo({
-            top: scrollThreshold * 0.4,
-            behavior: 'smooth'
-          });
-        }
-      }
-      // 第三阶段
-      else if (scrollProgress >= 0.55) {
-        // 向下滑动(第三阶段 -> 第二阶段)
-        if (diff > threshold) {
-          window.scrollTo({
-            top: scrollThreshold * 0.4, // 滚动到第二阶段
-            behavior: 'smooth'
-          });
-        }
-      }
-    };
-    
-    window.addEventListener('touchstart', handleTouchStart);
-    window.addEventListener('touchmove', handleTouchMove);
-    window.addEventListener('touchend', handleTouchEnd);
-    
-    return () => {
-      window.removeEventListener('touchstart', handleTouchStart);
-      window.removeEventListener('touchmove', handleTouchMove);
-      window.removeEventListener('touchend', handleTouchEnd);
-    };
-  }, [scrollProgress, scrollThreshold]);
+    if (scrollDirection === 'up' && accumulatedWheelDelta.current > 0) {
+      accumulatedWheelDelta.current = Math.max(0, accumulatedWheelDelta.current - 2);
+      targetScrollProgress.current = accumulatedWheelDelta.current / 100;
+    }
+  }, [scrollDirection, scrollLocked]);
 
   // 计算标题位置的偏移量
-  const titleTransform = scrollProgress < 0.05 ? 0 : 250 * easeOutExpo(scrollProgress);
+  const titleTransform = calculateTransform(
+    scrollProgress, 
+    SCROLL_THRESHOLDS.TITLE_TRANSFORM, 
+    250
+  );
   
   // 计算标题和说明文字的透明度
-  const titleOpacity = Math.max(1 - scrollProgress * 3, 0);
-  const textOpacity = scrollProgress < 0.05 ? 1 : Math.max(1 - scrollProgress * 3, 0);
+  const titleOpacity = calculateOpacity(
+    scrollProgress, 
+    SCROLL_THRESHOLDS.TITLE_HIDE, 
+    3
+  );
   
-  // 计算Vol和54的位移量，使用非线性动画，在第一阶段迅速完成移动
-  const progressRatio = Math.min(scrollProgress / 0.2, 1); // 0.2的进度内完成全部移动
+  const textOpacity = calculateOpacity(
+    scrollProgress, 
+    SCROLL_THRESHOLDS.TEXT_OPACITY, 
+    3
+  );
+  
+  // 计算Vol和期数的位移量，使用非线性动画，在第一阶段迅速完成移动
+  const progressRatio = Math.min(scrollProgress / SCROLL_THRESHOLDS.FIRST_STAGE_COMPLETE, 1);
   const volTransform = moveDistance * progressRatio;
   const numberTransform = moveDistance * progressRatio;
   
-  // 计算Vol和54的透明度，与移动同步
+  // 计算Vol和期数的透明度，与移动同步
   const elementsOpacity = Math.min(progressRatio * 1.2, 1);
   
-  // 计算日期文本的透明度，在第一阶段与Vol和54同步显示
+  // 计算日期文本的透明度，在第一阶段与Vol和期数同步显示
   const dateOpacity = Math.min(progressRatio, 1);
   
   // 计算日期文本的位置，同样在第一阶段完成移动
@@ -376,4 +183,4 @@ export function useScrollAnimation(
     dateCurrentX,
     extendedScrollProgress
   };
-} 
+}
