@@ -2,6 +2,7 @@ import { FunctionComponent } from "react";
 import { motion } from "framer-motion";
 import { useUIStore } from "@/store/uiStore";
 import { useAnimationStore, useGlobalScrollVisibility } from "@/store/animationStore";
+import { ANIMATION_CONFIG } from "@/config/animationConfig";
 
 export const BrowseButton: FunctionComponent = () => {
   // 使用全局滚动可见性（自动会初始化滚动监听）
@@ -23,12 +24,10 @@ export const BrowseButton: FunctionComponent = () => {
       className="fixed flex justify-center w-full z-[100] pointer-events-auto"
       initial={{ bottom: '-100px' }}
       animate={{ 
-        bottom: isVisible ? '-100px' : '60px'
+        bottom: isVisible ? '-100px' : '60px',
+        opacity: isVisible ? 0 : 1
       }}
-      transition={{ 
-        duration: 0.7, 
-        ease: [0.4, 0, 0.2, 1]
-      }}
+      transition={ANIMATION_CONFIG.presets.browseButton.transition}
     >
         <motion.button 
           className="text-white bg-black hover:bg-gray-800 rounded-full px-12 py-4 font-medium"

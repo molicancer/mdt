@@ -6,6 +6,7 @@ import { IssueContent } from "@/types/issue";
 import { getAllIssues, getIssueByNumber } from "@/lib/api/issueApi";
 import { useAnimationStore } from "@/store/animationStore";
 import { SCROLL_THRESHOLDS } from "@/config/scrollThresholds";
+import { ANIMATION_CONFIG } from '@/config/animationConfig';
 
 // 无需传递props的组件
 export const ContentSection = forwardRef<HTMLDivElement>(
@@ -115,7 +116,7 @@ export const ContentSection = forwardRef<HTMLDivElement>(
             setCurrentContent(pendingContent);
             setContentFadeState("fading-in");
           }
-        }, 300); // 淡出时间
+        }, ANIMATION_CONFIG.fade.duration);
         
         return () => clearTimeout(timer);
       } 
@@ -125,7 +126,7 @@ export const ContentSection = forwardRef<HTMLDivElement>(
           setContentFadeState("visible");
           setIsTransitioning(false);
           setPrevContent(null);
-        }, 500); // 淡入时间
+        }, ANIMATION_CONFIG.fade.fadeInDuration);
         
         return () => clearTimeout(timer);
       }
@@ -156,10 +157,7 @@ export const ContentSection = forwardRef<HTMLDivElement>(
         animate={{ 
           opacity: browseMode ? 1 : (scrollProgress > SCROLL_THRESHOLDS.CONTENT_SHOW ? 1 : 0),
         }}
-        transition={{ 
-          duration: 0.7,
-          ease: [0.4, 0, 0.2, 1]
-        }}
+        transition={ANIMATION_CONFIG.presets.contentCard.transition}
       >
         {/* 颜色区域整体容器 - 浏览模式下隐藏 */}
         <motion.div 
@@ -169,10 +167,7 @@ export const ContentSection = forwardRef<HTMLDivElement>(
             opacity: browseMode ? 0 : 1,
             visibility: browseMode ? "hidden" : "visible"
           }}
-          transition={{ 
-            duration: 0.7,
-            visibility: { delay: browseMode ? 0.7 : 0 }
-          }}
+          transition={ANIMATION_CONFIG.presets.contentCard.transition}
         >
           {/* 主颜色区域 - 悬停触发区域限制在这个div内 */}
           <motion.div 
@@ -188,10 +183,7 @@ export const ContentSection = forwardRef<HTMLDivElement>(
                 initial: { height: 300 },
                 hover: { height: 450 }
               }}
-              transition={{ 
-                duration: 0.7,
-                ease: [0.4, 0, 0.2, 1]
-              }}
+              transition={ANIMATION_CONFIG.presets.contentCard.transition}
             >
               {/* 过渡层 - 仅在切换期数时显示 */}
               <AnimatePresence>
@@ -203,10 +195,7 @@ export const ContentSection = forwardRef<HTMLDivElement>(
                       opacity: contentFadeState === "fading-out" ? 1 : 0
                     }}
                     exit={{ opacity: 0 }}
-                    transition={{ 
-                      duration: 0.5,
-                      ease: [0.4, 0, 0.2, 1]
-                    }}
+                    transition={ANIMATION_CONFIG.presets.issueList.transition}
                     style={{
                       backgroundColor: prevContent.color,
                       zIndex: 1
@@ -223,10 +212,7 @@ export const ContentSection = forwardRef<HTMLDivElement>(
                 initial: { top: '340px', zIndex: 1 },
                 hover: { top: '0', zIndex: 10 }
               }}
-              transition={{ 
-                duration: 0.7,
-                ease: [0.4, 0, 0.2, 1]
-              }}
+              transition={ANIMATION_CONFIG.presets.contentCard.transition}
             >
               <div className="w-full text-center">
                 <motion.div 
@@ -235,11 +221,7 @@ export const ContentSection = forwardRef<HTMLDivElement>(
                     initial: { transform: "translateY(0)" },
                     hover: { transform: "translateY(150px)" }
                   }}
-                  transition={{ 
-                    duration: 0.7,
-                    ease: [0.4, 0, 0.2, 1],
-                    delay: 0.05
-                  }}
+                  transition={ANIMATION_CONFIG.presets.contentCard.transition}
                 >
                   这周有什么新鲜事 👀 ?
                 </motion.div>
@@ -249,11 +231,7 @@ export const ContentSection = forwardRef<HTMLDivElement>(
                     initial: { transform: "translateY(0)" },
                     hover: { transform: "translateY(150px)" }
                   }}
-                  transition={{ 
-                    duration: 0.7,
-                    ease: [0.4, 0, 0.2, 1],
-                    delay: 0.1
-                  }}
+                  transition={ANIMATION_CONFIG.presets.contentCard.transition}
                 >
                   {currentContent.title}
                 </motion.h3>
@@ -263,11 +241,7 @@ export const ContentSection = forwardRef<HTMLDivElement>(
                     initial: { transform: "translateY(0)" },
                     hover: { transform: "translateY(150px)" }
                   }}
-                  transition={{ 
-                    duration: 0.7,
-                    ease: [0.4, 0, 0.2, 1],
-                    delay: 0.15
-                  }}
+                  transition={ANIMATION_CONFIG.presets.contentCard.transition}
                 >
                   {currentContent.subtitle}
                 </motion.p>
@@ -290,14 +264,14 @@ export const ContentSection = forwardRef<HTMLDivElement>(
                       key={index} 
                       className="text-base"
                       variants={{
-                        initial: { y: 150 + index * 20, opacity: 0 }, // 每个项目的起始位置不同，越后越低
+                        initial: { y: 150 + index * 20, opacity: 0 },
                         hover: { 
-                          y: 150, // 所有项目的结束位置相同
+                          y: 150,
                           opacity: 1,
                           transition: {
                             duration: 1.2,
-                            ease: [0.16, 1, 0.3, 1], // 使用弹簧曲线
-                            delay: index * 0.08 // 微小延迟差异，足以产生手风琴效果
+                            ease: ANIMATION_CONFIG.font.ease,
+                            delay: index * 0.08
                           }
                         }
                       }}
@@ -315,8 +289,8 @@ export const ContentSection = forwardRef<HTMLDivElement>(
                           opacity: 0.7,
                           transition: {
                             duration: 1.2,
-                            ease: [0.16, 1, 0.3, 1], // 弹簧曲线
-                            delay: currentContent.items.length * 0.08 + 0.1 // 延迟最大
+                            ease: ANIMATION_CONFIG.font.ease,
+                            delay: currentContent.items.length * 0.08 + 0.1
                           }
                         }
                       }}
@@ -339,10 +313,7 @@ export const ContentSection = forwardRef<HTMLDivElement>(
             transform: browseMode ? "translateY(-50%)" : "translateY(0)",
             opacity: contentFadeState === "visible" ? 1 : contentOpacity
           }}
-          transition={{ 
-            duration: 0.5,
-            ease: [0.4, 0, 0.2, 1]
-          }}
+          transition={ANIMATION_CONFIG.presets.contentCard.transition}
         >
           <motion.div 
             className="w-full max-w-md flex items-center justify-center"
@@ -351,20 +322,14 @@ export const ContentSection = forwardRef<HTMLDivElement>(
               height: browseMode ? 150 : 300,
               opacity: contentFadeState === "visible" ? 1 : contentOpacity
             }}
-            transition={{ 
-              duration: 0.7,
-              ease: [0.4, 0, 0.2, 1]
-            }}
+            transition={ANIMATION_CONFIG.presets.contentCard.transition}
           >
             <motion.div 
               initial={{ scale: 1 }}
               animate={{ 
                 scale: browseMode ? 0.7 : 1
               }}
-              transition={{ 
-                duration: 0.7,
-                ease: [0.4, 0, 0.2, 1]
-              }}
+              transition={ANIMATION_CONFIG.presets.contentCard.transition}
             >
               {renderIcon(currentContent.icon)}
             </motion.div>

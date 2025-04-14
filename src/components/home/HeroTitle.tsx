@@ -1,6 +1,7 @@
 import { forwardRef } from "react";
 import { motion } from "framer-motion";
 import { useAnimationStore } from "@/store/animationStore";
+import { ANIMATION_CONFIG } from '@/config/animationConfig';
 
 export const HeroTitle = forwardRef<HTMLDivElement>(
   function HeroTitle(_, ref) {
@@ -16,10 +17,7 @@ export const HeroTitle = forwardRef<HTMLDivElement>(
           y: isVisible ? 0 : "-100vh",
           opacity: isVisible ? 1 : 0
         }}
-        transition={{ 
-          type: "linear",
-          duration: 1
-        }}
+        transition={ANIMATION_CONFIG.presets.title.transition}
       >
         <h1 className="text-[118px]/[110px] font-newyork-large text-center relative">
           Design

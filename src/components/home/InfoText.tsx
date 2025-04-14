@@ -2,6 +2,7 @@ import { FunctionComponent } from "react";
 import { motion } from "framer-motion";
 import { useUIStore } from "@/store/uiStore";
 import { useAnimationStore } from "@/store/animationStore";
+import { ANIMATION_CONFIG } from "@/config/animationConfig";
 
 export const InfoText: FunctionComponent = () => {
   // 从状态存储获取所需状态
@@ -13,12 +14,10 @@ export const InfoText: FunctionComponent = () => {
       className="fixed w-full text-center flex justify-center"
       initial={{ opacity: 1 }}
       animate={{ 
-        opacity: isVisible ? 1 : 0
+        opacity: isVisible ? 1 : 0,
+        y: isVisible ? 0 : 20
       }}
-      transition={{ 
-        duration: 0.5,
-        ease: "easeInOut"
-      }}
+      transition={ANIMATION_CONFIG.presets.infoText.transition}
       style={{ 
         top: 'calc(50vh + 140px)',
         opacity: browseMode ? 0 : 1,

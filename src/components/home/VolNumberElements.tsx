@@ -14,40 +14,42 @@ import {
   shouldEnterStage2, 
   shouldEnterBrowseMode 
 } from "@/lib/utils";
+import { UI_CONFIG } from '@/config/appConfig';
+import { ANIMATION_CONFIG } from '@/config/animationConfig';
 
-// 配置常量
-const CONFIG = {
-  // 基础样式
-  base: {
-    fontSize: 150, // 数值，不再使用Tailwind类
-    fontFamily: "font-newyork-large",
-    heightRatio: 1.06 // 容器高度为字体大小的1.06倍
-  },
-  // 动画配置
-  animation: {
-    duration: 0.5,
-    baseDelay: 0.01,
-    incrementDelay: 0.02,
-    ease: [0.4, 0, 0.2, 1],
-    fontSizeTransition: { 
-      duration: 0.35, 
-      ease: [0.32, 0.72, 0, 1] 
-    }
-  },
-  // 布局配置
-  layout: {
-    maxDisplayCount: 10, // 最多显示多少个期数
-    activeBrowseTransform: 300 // 浏览模式下的位移值
-  },
-  // 默认配置
-  defaults: {
-    initialVisible: true
-  }
-} as const;
+const {
+  base,
+  layout,
+  animation,
+  defaults
+} = ANIMATION_CONFIG.volNumber;
+
+const {
+  fontSize,
+  fontFamily,
+  heightRatio
+} = base;
+
+const {
+  maxDisplayCount,
+  activeBrowseTransform
+} = layout;
+
+const {
+  duration,
+  baseDelay,
+  incrementDelay,
+  ease,
+  fontSizeTransition
+} = animation;
+
+const {
+  initialVisible
+} = defaults;
 
 // 获取数字高度的函数（根据字体大小动态计算）
-const getItemHeight = (): number => {
-  return Math.round(CONFIG.base.fontSize * CONFIG.base.heightRatio);
+const getItemHeight = () => {
+  return fontSize * heightRatio;
 };
 
 // 类型定义
@@ -62,7 +64,6 @@ interface VolNumberElementsProps {
 
 // 计算动画延迟时间
 const calculateDelay = (distanceFromActive: number): number => {
-  const { baseDelay, incrementDelay } = CONFIG.animation;
   return baseDelay + (distanceFromActive * incrementDelay);
 };
 
@@ -83,7 +84,7 @@ const getDisplayIssues = (issues: Issue[], activeIssue: number): Issue[] => {
   if (activeIndex === -1) return sortedIssues;
   
   // 最多显示的期数数量
-  const { maxDisplayCount } = CONFIG.layout;
+  const { maxDisplayCount } = layout;
   
   // 计算显示范围
   const halfCount = Math.floor(maxDisplayCount / 2);
@@ -152,9 +153,7 @@ const fetchIssues = async (): Promise<Issue[]> => {
 };
 
 export function VolNumberElements({ 
-  visibilityConfig = {
-    initialVisible: CONFIG.defaults.initialVisible,
-  },
+  visibilityConfig = defaults,
   activeIssue: externalActiveIssue,
   onIssueChange: externalOnIssueChange,
   browseMode: externalBrowseMode
@@ -416,13 +415,9 @@ export function VolNumberElements({
       className="fixed inset-0 flex items-center justify-center z-20 pointer-events-none"
       initial={{ opacity: 0 }}
       animate={{ 
-        // 只在初始阶段（isInitialStage为true且initialVisible为false）时隐藏，其他情况都显示
         opacity: (!isInitialStage || visibilityConfig.initialVisible) ? 1 : 0 
       }}
-      transition={{ 
-        duration: 0.3,
-        ease: CONFIG.animation.ease
-      }}
+      transition={ANIMATION_CONFIG.presets.issueElement.transition}
     >
       <div className="max-w-6xl w-full px-8 relative">
         {/* Vol部分 */}
@@ -464,7 +459,6 @@ function VolElement({
   volTransform: number, 
   elementsOpacity: number 
 }) {  
-  // 动态计算每个项的高度
   const itemHeight = getItemHeight();
   
   return (
@@ -475,13 +469,13 @@ function VolElement({
         x: -volTransform,
         opacity: elementsOpacity
       }}
-      transition={{ duration: CONFIG.animation.duration, ease: CONFIG.animation.ease }}
+      transition={ANIMATION_CONFIG.presets.issueElement.transition}
       style={{ pointerEvents: 'none' }}
     >
-      <h2 className={`${CONFIG.base.fontFamily} leading-none flex items-center`} 
+      <h2 className={`${ANIMATION_CONFIG.volNumber.base.fontFamily} leading-none flex items-center`} 
           style={{ 
             height: `${itemHeight}px`,
-            fontSize: `${CONFIG.base.fontSize}px`
+            fontSize: `${ANIMATION_CONFIG.volNumber.base.fontSize}px`
           }}>
         Vol
       </h2>
@@ -491,32 +485,29 @@ function VolElement({
 
 // 子组件：期数列表
 function IssuesList({ 
-  issues, // 期数数据
-  activeIssue, // 当前活动期数
-  issuePositions, // 期数位置
-  elementsOpacity, // 元素透明度
-  onIssueChange, // 期数变化回调
-  browseMode = false, // 浏览模式
-  lastNormalPositions = {} // 普通模式下的最后位置
+  issues,
+  activeIssue,
+  issuePositions,
+  elementsOpacity,
+  onIssueChange,
+  browseMode = false,
+  lastNormalPositions = {}
 }: { 
-  issues: Issue[], // 期数数据
-  activeIssue: number, // 当前活动期数
-  issuePositions: Record<number, number>, // 期数位置
-  elementsOpacity: number, // 元素透明度
-  onIssueChange: (issueNumber: number) => void, // 期数变化回调
-  browseMode?: boolean, // 浏览模式
-  lastNormalPositions?: Record<number, number> // 普通模式下的最后位置
+  issues: Issue[],
+  activeIssue: number,
+  issuePositions: Record<number, number>,
+  elementsOpacity: number,
+  onIssueChange: (issueNumber: number) => void,
+  browseMode?: boolean,
+  lastNormalPositions?: Record<number, number>
 }) {
-  const { duration, ease } = CONFIG.animation;
+  const { duration, ease } = ANIMATION_CONFIG.volNumber.animation;
   
-  // 从animationStore获取和设置垂直偏移量
   const activeIssueOffset = useAnimationStore(state => state.activeIssueOffset);
   const setActiveIssueOffset = useAnimationStore(state => state.setActiveIssueOffset);
   
-  // 动态计算每个项的高度
   const itemHeight = getItemHeight();
   
-  // 如果activeIssue为0，显示所有期数并选择第一个作为活动状态
   const effectiveActiveIssue = activeIssue === 0 && issues.length > 0 ? 
     (issues.find(issue => issue.isLatest)?.number || issues[0].number) : 
     activeIssue;
@@ -525,21 +516,13 @@ function IssuesList({
     ? issues.filter(issue => issue.number === effectiveActiveIssue)
     : getDisplayIssues(issues, effectiveActiveIssue);
     
-  const activeBrowseTransform = CONFIG.layout.activeBrowseTransform;
+  const activeBrowseTransform = ANIMATION_CONFIG.volNumber.layout.activeBrowseTransform;
   
-  // 计算垂直位置偏移量
-  // 找出当前激活项在displayIssues中的索引
   const activeIndex = displayIssues.findIndex(issue => issue.number === effectiveActiveIssue);
-  
-  // 计算中心对齐的偏移值：
-  // 如果是第一项(idx=0)，不需要偏移
-  // 对于其他项，将其移动到第一项的位置，使用动态计算的高度
   const calculatedOffset = activeIndex > 0 ? -itemHeight * activeIndex : 0;
   
-  // 当索引变化时更新全局状态
   useEffect(() => {
     if (!browseMode && calculatedOffset !== activeIssueOffset) {
-      console.log(`更新垂直偏移: ${calculatedOffset}px，当前期数索引: ${activeIndex}，项目高度: ${itemHeight}px`);
       setActiveIssueOffset(calculatedOffset);
     }
   }, [activeIndex, calculatedOffset, activeIssueOffset, setActiveIssueOffset, browseMode, itemHeight]);
@@ -550,39 +533,28 @@ function IssuesList({
       initial={{ opacity: 0, y: 0 }}
       animate={{ 
         opacity: elementsOpacity,
-        y: browseMode ? 0 : activeIssueOffset, // 使用全局状态的偏移量
-        top: `calc(50% - ${itemHeight / 2}px)` // 垂直居中的基准点
+        y: browseMode ? 0 : activeIssueOffset,
+        top: `calc(50% - ${itemHeight / 2}px)`
       }}
-      transition={{ 
-        duration: 0.5, 
-        ease: [0.4, 0, 0.2, 1] 
-      }}
+      transition={ANIMATION_CONFIG.presets.issueElement.transition}
       style={{ pointerEvents: 'auto' }}
     >
       <LayoutGroup id="issues-group">
         <AnimatePresence>
           {displayIssues.map((issue) => {
             const isActive = issue.number === effectiveActiveIssue;
-            
-            // 根据是否为当前选中的期数定义字体大小
-            const fontSize = isActive ? 180 : 130; // 使用与CONFIG.base.fontSize一致的大小
+            const fontSize = isActive ? 180 : 130;
             const opacity = isActive ? 1 : 0.3;
             
-            // 计算水平位置
-            let xPosition = 0;
-            
-            if (browseMode && isActive) {
-              xPosition = activeBrowseTransform;
-              console.log(`浏览模式: 期数${issue.number}移动到${xPosition}, 记录位置: ${lastNormalPositions[issue.number]}`);
-            } else {
-              xPosition = issuePositions[issue.number] || 0;
-            }
+            let xPosition = browseMode && isActive ? 
+              activeBrowseTransform : 
+              issuePositions[issue.number] || 0;
             
             return (
               <motion.div 
                 key={issue.id}
                 layout
-                className={`${CONFIG.base.fontFamily} cursor-pointer leading-none flex items-center`}
+                className={`${ANIMATION_CONFIG.volNumber.base.fontFamily} cursor-pointer leading-none flex items-center`}
                 style={{ height: `${itemHeight}px` }}
                 initial={{ opacity: 0 }}
                 animate={{ 
@@ -590,41 +562,8 @@ function IssuesList({
                   opacity: elementsOpacity * opacity,
                   fontSize: `${fontSize}px`
                 }}
-                transition={{ 
-                  duration, 
-                  ease,
-                  layout: {
-                    duration,
-                    ease
-                  },
-                  fontSize: {
-                    duration: 0.8,
-                    ease: [0.16, 1, 0.3, 1]  // 使用更平滑的贝塞尔曲线
-                  },
-                  x: {
-                    duration,
-                    ease
-                  },
-                  opacity: {
-                    duration,
-                    ease
-                  }
-                }}
-                whileHover={!browseMode ? {
-                  scale: 1.05,
-                  opacity: 0.7,
-                  transition: { 
-                    duration: 0.3,
-                    scale: {
-                      duration: 0.3,
-                      ease: [0.25, 0.1, 0.25, 1.0]
-                    },
-                    opacity: {
-                      duration: 0.3,
-                      ease: [0.25, 0.1, 0.25, 1.0]
-                    }
-                  }
-                } : undefined}
+                transition={ANIMATION_CONFIG.presets.issueElement.transition}
+                whileHover={!browseMode ? ANIMATION_CONFIG.presets.numberElement.hover : undefined}
                 onClick={() => !browseMode && onIssueChange(issue.number)}
               >
                 {issue.number}
@@ -651,8 +590,6 @@ function DateInfo({
 }) {
   if (!issueData || browseMode) return null;
   
-  const { duration, ease } = CONFIG.animation;
-  
   return (
     <motion.div 
       className="absolute top-36 will-change-transform transform-gpu"
@@ -661,7 +598,7 @@ function DateInfo({
         x: dateCurrentX,
         opacity: dateOpacity
       }}
-      transition={{ duration, ease }}
+      transition={ANIMATION_CONFIG.presets.issueElement.transition}
       style={{ pointerEvents: 'none' }}
     >
       <p className="text-[#545454]">
@@ -670,3 +607,59 @@ function DateInfo({
     </motion.div>
   );
 }
+
+const containerStyle = {
+  height: getItemHeight(),
+  maxHeight: maxDisplayCount * getItemHeight(),
+  transform: activeBrowseTransform,
+  fontFamily,
+};
+
+const NumberElement = React.memo(({ 
+  number, 
+  isActive, 
+  position, 
+  index,
+  browseMode,
+  onIssueChange
+}: {
+  number: number;
+  isActive: boolean;
+  position: number;
+  index: number;
+  browseMode: boolean;
+  onIssueChange: (number: number) => void;
+}) => {
+  const variants = {
+    initial: { opacity: 0, y: 20 },
+    animate: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        ...ANIMATION_CONFIG.presets.issueElement.transition,
+        delay: ANIMATION_CONFIG.volNumber.animation.baseDelay + index * ANIMATION_CONFIG.volNumber.animation.incrementDelay
+      }
+    },
+    exit: {
+      opacity: 0,
+      transition: {
+        duration: ANIMATION_CONFIG.presets.issueElement.transition.duration / 2
+      }
+    }
+  };
+
+  return (
+    <motion.div 
+      className={`${ANIMATION_CONFIG.volNumber.base.fontFamily} cursor-pointer leading-none flex items-center`}
+      style={{ height: `${getItemHeight()}px` }}
+      initial="initial"
+      animate="animate"
+      exit="exit"
+      variants={variants}
+      whileHover={!browseMode ? ANIMATION_CONFIG.presets.numberElement.hover : undefined}
+      onClick={() => !browseMode && onIssueChange(number)}
+    >
+      {number}
+    </motion.div>
+  );
+});
