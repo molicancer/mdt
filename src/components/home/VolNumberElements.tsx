@@ -9,43 +9,21 @@ import { Issue } from "@/store/uiStore"; // 使用从 uiStore 导出的 Issue �
 import { useScrollWheel } from "@/hooks/use-scroll-wheel";
 import { useScrollStore } from "@/store/scrollStore";
 import { 
-  extractNumberFromSlug, 
   getIssueNumberFromURL, 
   shouldEnterStage2, 
   shouldEnterBrowseMode 
 } from "@/lib/utils";
-import { UI_CONFIG } from '@/config/appConfig';
 import { ANIMATION_CONFIG } from '@/config/animationConfig';
+import { getAllIssues } from "@/lib/api/issueApi";
 
 const {
-  base,
-  layout,
-  animation,
-  defaults
+  base
 } = ANIMATION_CONFIG.volNumber;
 
 const {
   fontSize,
-  fontFamily,
   heightRatio
 } = base;
-
-const {
-  maxDisplayCount,
-  activeBrowseTransform
-} = layout;
-
-const {
-  duration,
-  baseDelay,
-  incrementDelay,
-  ease,
-  fontSizeTransition
-} = animation;
-
-const {
-  initialVisible
-} = defaults;
 
 // 获取数字高度的函数（根据字体大小动态计算）
 const getItemHeight = () => {
@@ -64,7 +42,7 @@ interface VolNumberElementsProps {
 
 // 计算动画延迟时间
 const calculateDelay = (distanceFromActive: number): number => {
-  return baseDelay + (distanceFromActive * incrementDelay);
+  return ANIMATION_CONFIG.volNumber.animation.baseDelay + (distanceFromActive * ANIMATION_CONFIG.volNumber.animation.incrementDelay);
 };
 
 // 获取要显示的期数
@@ -83,8 +61,8 @@ const getDisplayIssues = (issues: Issue[], activeIssue: number): Issue[] => {
   // 如果找不到活动期数，返回全部
   if (activeIndex === -1) return sortedIssues;
   
-  // 最多显示的期数数量
-  const { maxDisplayCount } = layout;
+  // 获取配置的最大显示数量
+  const maxDisplayCount = ANIMATION_CONFIG.volNumber.layout.maxDisplayCount;
   
   // 计算显示范围
   const halfCount = Math.floor(maxDisplayCount / 2);
@@ -102,40 +80,22 @@ const getDisplayIssues = (issues: Issue[], activeIssue: number): Issue[] => {
 // 使用WordPress API获取期数数据
 const fetchIssues = async (): Promise<Issue[]> => {
   try {
-    // 获取所有文章的列表
-    const response = await fetch('http://172.16.69.13:8080/wp-json/wp/v2/posts');
+    // 使用issueApi中的函数获取数据
+    const issueContents = await getAllIssues();
     
-    if (!response.ok) {
-      throw new Error(`API错误: ${response.status}`);
-    }
-    
-    const posts = await response.json();
-    const formattedIssues: Issue[] = [];
-    
-    // 格式化数据，从slug中提取期数
-    for (let i = 0; i < posts.length; i++) {
-      const post = posts[i];
-      
-      // 从slug中提取期数
-      const number = extractNumberFromSlug(post.slug);
-      if (number === 0) continue; // 跳过无效期数
-      
-      formattedIssues.push({
-        id: post.id,
-        number,
-        isLatest: i === 0, // 假设第一个是最新的
-        date: new Date(post.date).toLocaleDateString('en-US', {
-          month: 'short',
-          day: 'numeric',
-          year: 'numeric'
-        }),
-        title: post.title.rendered,
-        slug: post.slug
-      });
-    }
-    
-    // 按期数排序（降序，最新的在前面）
-    return formattedIssues.sort((a, b) => b.number - a.number);
+    // 将IssueContent格式转换为Issue格式
+    return issueContents.map((issue, index) => ({
+      id: issue.id,
+      number: issue.number,
+      isLatest: index === 0, // 假设第一个是最新的（因为getAllIssues已经按降序排序）
+      date: issue.date ? new Date(issue.date).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+      }) : 'Unknown Date',
+      title: issue.title,
+      slug: `vol${issue.number}` // 构造slug
+    }));
   } catch (error) {
     console.error('获取期数失败:', error);
     
@@ -145,15 +105,13 @@ const fetchIssues = async (): Promise<Issue[]> => {
       { id: 2, number: 53, date: 'Feb 23 2025', title: 'Winter Special', slug: 'vol53' },
       { id: 3, number: 52, date: 'Feb 23 2025', title: 'Year End', slug: 'vol52' },
       { id: 4, number: 51, date: 'Feb 23 2025', title: 'Autumn Collection', slug: 'vol51' },
-      { id: 5, number: 50, date: 'Feb 23 2025', title: 'Anniversary Issue', slug: 'vol50' },
-      { id: 6, number: 49, date: 'Feb 23 2025', title: 'September Issue', slug: 'vol49' },
-      { id: 7, number: 48, date: 'Feb 23 2025', title: 'Summer Special', slug: 'vol48' }
+      { id: 5, number: 50, date: 'Feb 23 2025', title: 'Anniversary Issue', slug: 'vol50' }
     ];
   }
 };
 
 export function VolNumberElements({ 
-  visibilityConfig = defaults,
+  visibilityConfig = { initialVisible: ANIMATION_CONFIG.volNumber.defaults.initialVisible },
   activeIssue: externalActiveIssue,
   onIssueChange: externalOnIssueChange,
   browseMode: externalBrowseMode
@@ -167,7 +125,6 @@ export function VolNumberElements({
     setIssues,
     issuePositions,
     setIssuePosition,
-    lastNormalPositions,
     setLastNormalPositions,
     currentActiveIssue,
     setCurrentActiveIssue
@@ -443,7 +400,6 @@ export function VolNumberElements({
             elementsOpacity={elementsOpacity}
             onIssueChange={handleIssueChange}
             browseMode={browseMode}
-            lastNormalPositions={lastNormalPositions}
           />
         )}
       </div>
@@ -490,19 +446,15 @@ function IssuesList({
   issuePositions,
   elementsOpacity,
   onIssueChange,
-  browseMode = false,
-  lastNormalPositions = {}
+  browseMode = false
 }: { 
   issues: Issue[],
   activeIssue: number,
   issuePositions: Record<number, number>,
   elementsOpacity: number,
   onIssueChange: (issueNumber: number) => void,
-  browseMode?: boolean,
-  lastNormalPositions?: Record<number, number>
+  browseMode?: boolean
 }) {
-  const { duration, ease } = ANIMATION_CONFIG.volNumber.animation;
-  
   const activeIssueOffset = useAnimationStore(state => state.activeIssueOffset);
   const setActiveIssueOffset = useAnimationStore(state => state.setActiveIssueOffset);
   
@@ -546,7 +498,7 @@ function IssuesList({
             const fontSize = isActive ? 180 : 130;
             const opacity = isActive ? 1 : 0.3;
             
-            let xPosition = browseMode && isActive ? 
+            const xPosition = browseMode && isActive ? 
               activeBrowseTransform : 
               issuePositions[issue.number] || 0;
             
@@ -607,59 +559,3 @@ function DateInfo({
     </motion.div>
   );
 }
-
-const containerStyle = {
-  height: getItemHeight(),
-  maxHeight: maxDisplayCount * getItemHeight(),
-  transform: activeBrowseTransform,
-  fontFamily,
-};
-
-const NumberElement = React.memo(({ 
-  number, 
-  isActive, 
-  position, 
-  index,
-  browseMode,
-  onIssueChange
-}: {
-  number: number;
-  isActive: boolean;
-  position: number;
-  index: number;
-  browseMode: boolean;
-  onIssueChange: (number: number) => void;
-}) => {
-  const variants = {
-    initial: { opacity: 0, y: 20 },
-    animate: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        ...ANIMATION_CONFIG.presets.issueElement.transition,
-        delay: ANIMATION_CONFIG.volNumber.animation.baseDelay + index * ANIMATION_CONFIG.volNumber.animation.incrementDelay
-      }
-    },
-    exit: {
-      opacity: 0,
-      transition: {
-        duration: ANIMATION_CONFIG.presets.issueElement.transition.duration / 2
-      }
-    }
-  };
-
-  return (
-    <motion.div 
-      className={`${ANIMATION_CONFIG.volNumber.base.fontFamily} cursor-pointer leading-none flex items-center`}
-      style={{ height: `${getItemHeight()}px` }}
-      initial="initial"
-      animate="animate"
-      exit="exit"
-      variants={variants}
-      whileHover={!browseMode ? ANIMATION_CONFIG.presets.numberElement.hover : undefined}
-      onClick={() => !browseMode && onIssueChange(number)}
-    >
-      {number}
-    </motion.div>
-  );
-});

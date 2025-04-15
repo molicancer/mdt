@@ -1,5 +1,4 @@
 import { IssueContent } from "@/types/issue";
-import { issueContents } from "@/data/issueContents";
 import { extractNumberFromSlug } from '@/lib/utils';
 
 // 作者信息缓存，避免重复请求
@@ -89,8 +88,7 @@ export async function getAllIssues(): Promise<IssueContent[]> {
     return result.sort((a, b) => b.number - a.number);
   } catch (error) {
     console.error('获取期数失败:', error);
-    // 返回静态数据作为后备
-    return issueContents;
+    throw error; // 直接抛出错误，让调用者处理
   }
 }
 
@@ -105,8 +103,7 @@ export async function getIssueByNumber(issueNumber: number): Promise<IssueConten
     return allIssues.find(issue => issue.number === issueNumber) || null;
   } catch (error) {
     console.error(`获取期数 ${issueNumber} 失败:`, error);
-    // 从静态数据中查找
-    return issueContents.find(issue => issue.number === issueNumber) || null;
+    throw error; // 直接抛出错误，让调用者处理
   }
 }
 
@@ -120,9 +117,7 @@ export async function getLatestIssue(): Promise<IssueContent | null> {
     return allIssues[0] || null;
   } catch (error) {
     console.error('获取最新期数失败:', error);
-    // 从静态数据中查找最新一期
-    const sortedIssues = [...issueContents].sort((a, b) => b.number - a.number);
-    return sortedIssues[0] || null;
+    throw error; // 直接抛出错误，让调用者处理
   }
 }
 

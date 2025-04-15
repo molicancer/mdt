@@ -19,7 +19,6 @@ export const ContentSection = forwardRef<HTMLDivElement>(
     
     // 状态: 期刊数据
     const [issues, setIssues] = useState<IssueContent[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
     
     // 状态: 当前内容
     const [currentContent, setCurrentContent] = useState<IssueContent | null>(null);
@@ -34,13 +33,10 @@ export const ContentSection = forwardRef<HTMLDivElement>(
     useEffect(() => {
       const fetchIssues = async () => {
         try {
-          setIsLoading(true);
           const data = await getAllIssues();
           setIssues(data);
-          setIsLoading(false);
         } catch (error) {
           console.error("获取期刊数据失败", error);
-          setIsLoading(false);
         }
       };
       
@@ -95,8 +91,6 @@ export const ContentSection = forwardRef<HTMLDivElement>(
       
       // 已有内容且期数变化了，触发过渡
       if (currentContent.number !== targetContent.number) {
-        console.log(`开始切换: ${currentContent.number} -> ${targetContent.number}`);
-        
         // 标记过渡开始，保存上一个内容
         setPrevContent(currentContent);
         setIsTransitioning(true);
@@ -132,13 +126,7 @@ export const ContentSection = forwardRef<HTMLDivElement>(
       }
     }, [contentFadeState, pendingContent]);
     
-    if (isLoading) return <div className="fixed inset-0 flex items-center justify-center">加载中...</div>;
     if (!currentContent) return null;
-    
-    // 内容透明度，根据淡入淡出状态确定
-    const contentOpacity = 
-      contentFadeState === "fading-out" ? 0 : 
-      contentFadeState === "fading-in" ? 1 : 1;
     
     // 渲染图标 - 直接使用图片URL
     const renderIcon = (iconUrl: string) => {
@@ -151,9 +139,7 @@ export const ContentSection = forwardRef<HTMLDivElement>(
       <motion.div 
         ref={ref}
         className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-xl z-[21] pointer-events-none"
-        initial={{ 
-          opacity: 0,
-        }}
+        initial={{ opacity: 0 }}
         animate={{ 
           opacity: browseMode ? 1 : (scrollProgress > SCROLL_THRESHOLDS.CONTENT_SHOW ? 1 : 0),
         }}
@@ -195,7 +181,7 @@ export const ContentSection = forwardRef<HTMLDivElement>(
                       opacity: contentFadeState === "fading-out" ? 1 : 0
                     }}
                     exit={{ opacity: 0 }}
-                    transition={ANIMATION_CONFIG.presets.issueList.transition}
+                    transition={ANIMATION_CONFIG.presets.contentTransition.fadeOut.transition}
                     style={{
                       backgroundColor: prevContent.color,
                       zIndex: 1
@@ -311,7 +297,7 @@ export const ContentSection = forwardRef<HTMLDivElement>(
           animate={{ 
             top: browseMode ? '50%' : 0,
             transform: browseMode ? "translateY(-50%)" : "translateY(0)",
-            opacity: contentFadeState === "visible" ? 1 : contentOpacity
+            opacity: contentFadeState === "visible" ? 1 : (contentFadeState === "fading-out" ? 0 : 1)
           }}
           transition={ANIMATION_CONFIG.presets.contentCard.transition}
         >
@@ -320,7 +306,7 @@ export const ContentSection = forwardRef<HTMLDivElement>(
             initial={{ height: 300, opacity: 1 }}
             animate={{ 
               height: browseMode ? 150 : 300,
-              opacity: contentFadeState === "visible" ? 1 : contentOpacity
+              opacity: contentFadeState === "visible" ? 1 : (contentFadeState === "fading-out" ? 0 : 1)
             }}
             transition={ANIMATION_CONFIG.presets.contentCard.transition}
           >
