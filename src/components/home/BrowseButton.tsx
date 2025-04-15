@@ -10,6 +10,13 @@ export const BrowseButton: FunctionComponent = () => {
   
   // 从状态存储获取所需状态
   const isVisible = useAnimationStore(state => state.isVisible);
+  /**
+   * 从UI状态存储中获取浏览相关状态
+   * browseMode - 当前是否处于浏览模式
+   * activeIssue - 当前激活的期数ID（用于显示按钮文本）
+   * toggleBrowseMode - 切换浏览模式的方法
+   * scrollLocked - 页面滚动是否被锁定
+   */
   const { browseMode, activeIssue, toggleBrowseMode, scrollLocked } = useUIStore();
   
   // 点击按钮切换状态

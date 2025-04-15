@@ -22,7 +22,7 @@ export function SelectIssueHint() {
       transition={ANIMATION_CONFIG.presets.hintText.transition}
     >
       <div className="flex items-center gap-2">
-        <span className="text-sm text-gray-600">Select the issue number</span>
+        <span className="text-xs text-gray-600">Select the issue number</span>
       </div>
     </motion.div>
   );

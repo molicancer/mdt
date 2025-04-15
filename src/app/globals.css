@@ -179,8 +179,8 @@
     rgba(0, 0, 0, 0.2) 65%,
     rgba(0, 0, 0, 0) 80%
   );
-  backdrop-filter: blur(10px);
-  background-color: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(20px);
+  background-color: rgba(255, 255, 255, 0.4);
 }
 
 /* 底部模糊遮罩 */
@@ -200,13 +200,13 @@
     rgba(0, 0, 0, 0.2) 65%,
     rgba(0, 0, 0, 0) 80%
   );
-  backdrop-filter: blur(10px);
-  background-color: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(20px);
+  background-color: rgba(255, 255, 255, 0.4);
 }
 
 /* 左侧模糊遮罩 */
 .blur-mask-left {
-  width: 20vw;
+  width: 25vw;
   height: 100%;
   position: fixed;
   top: 0;
@@ -221,13 +221,13 @@
     rgba(0, 0, 0, 0.2) 65%,
     rgba(0, 0, 0, 0) 80%
   );
-  backdrop-filter: blur(10px);
-  background-color: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(20px);
+  background-color: rgba(255, 255, 255, 0.4);
 }
 
 /* 右侧模糊遮罩 */
 .blur-mask-right {
-  width: 20vw;
+  width: 25vw;
   height: 100%;
   position: fixed;
   top: 0;
@@ -242,8 +242,8 @@
     rgba(0, 0, 0, 0.2) 65%,
     rgba(0, 0, 0, 0) 80%
   );
-  backdrop-filter: blur(10px);
-  background-color: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(20px);
+  background-color: rgba(255, 255, 255, 0.4);
 }
 
 .dark .blur-mask-top,

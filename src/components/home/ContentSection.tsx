@@ -22,109 +22,61 @@ export const ContentSection = forwardRef<HTMLDivElement>(
     
     // 状态: 当前内容
     const [currentContent, setCurrentContent] = useState<IssueContent | null>(null);
-    const [prevContent, setPrevContent] = useState<IssueContent | null>(null);
-    const [isTransitioning, setIsTransitioning] = useState(false);
     
-    // 内容淡入淡出动画状态
-    const [contentFadeState, setContentFadeState] = useState("visible"); // "fading-out", "fading-in", "visible"
-    const [pendingContent, setPendingContent] = useState<IssueContent | null>(null);
+    // hover状态
+    const [isHovering, setIsHovering] = useState(false);
     
-    // 加载所有期刊数据
+    // 加载期刊数据并处理期数变化
     useEffect(() => {
-      const fetchIssues = async () => {
+      const loadContent = async () => {
         try {
-          const data = await getAllIssues();
-          setIssues(data);
+          // 如果issues为空，先获取所有期刊数据
+          if (issues.length === 0) {
+            const data = await getAllIssues();
+            setIssues(data);
+            
+            // 如果有activeIssue，在加载的数据中查找对应内容
+            if (activeIssue) {
+              const targetIssue = data.find(item => item.number === activeIssue);
+              if (targetIssue) {
+                setCurrentContent(targetIssue);
+                return;
+              }
+            }
+            
+            // 没有activeIssue或找不到对应内容时，使用第一个作为默认值
+            if (data.length > 0 && !currentContent) {
+              setCurrentContent(data[0]);
+            }
+            return;
+          }
+          
+          // issues已加载，处理activeIssue变化
+          if (activeIssue) {
+            // 先从已加载的issues中查找
+            const targetContent = issues.find(item => item.number === activeIssue);
+            
+            if (targetContent) {
+              setCurrentContent(targetContent);
+            } else {
+              // 如果找不到，尝试单独获取
+              const fetchedIssue = await getIssueByNumber(activeIssue);
+              if (fetchedIssue) {
+                setCurrentContent(fetchedIssue);
+              }
+            }
+          } else if (!currentContent && issues.length > 0) {
+            // 没有activeIssue但issues已加载，使用第一个作为默认值
+            setCurrentContent(issues[0]);
+          }
         } catch (error) {
           console.error("获取期刊数据失败", error);
         }
       };
       
-      fetchIssues();
-    }, []);
-    
-    // 监听期数变化
-    useEffect(() => {
-      if (issues.length === 0) return;
-      
-      const fetchIssue = async () => {
-        try {
-          // 找到对应的内容
-          const targetContent = issues.find(item => item.number === activeIssue);
-          
-          if (!targetContent && activeIssue) {
-            // 如果当前activeIssue找不到对应内容，尝试从API获取
-            const fetchedIssue = await getIssueByNumber(activeIssue);
-            if (fetchedIssue) {
-              handleContentChange(fetchedIssue);
-              return;
-            }
-          }
-          
-          // 有匹配的内容
-          if (targetContent) {
-            handleContentChange(targetContent);
-            return;
-          }
-          
-          // 如果没有匹配的内容且currentContent为空，使用第一个
-          if (!currentContent && issues.length > 0) {
-            const defaultIssue = issues[0];
-            setCurrentContent(defaultIssue);
-          }
-        } catch (error) {
-          console.error("获取期刊内容失败", error);
-        }
-      };
-      
-      fetchIssue();
+      loadContent();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [activeIssue, issues, currentContent]);
-    
-    // 处理内容变化的逻辑
-    const handleContentChange = (targetContent: IssueContent) => {
-      // 首次加载，直接设置
-      if (!currentContent) {
-        setCurrentContent(targetContent);
-        return;
-      }
-      
-      // 已有内容且期数变化了，触发过渡
-      if (currentContent.number !== targetContent.number) {
-        // 标记过渡开始，保存上一个内容
-        setPrevContent(currentContent);
-        setIsTransitioning(true);
-        
-        // 先将当前内容淡出
-        setContentFadeState("fading-out");
-        setPendingContent(targetContent);
-      }
-    };
-    
-    // 处理内容淡入淡出
-    useEffect(() => {
-      if (contentFadeState === "fading-out") {
-        // 内容淡出动画结束后，设置新内容并开始淡入
-        const timer = setTimeout(() => {
-          if (pendingContent) {
-            setCurrentContent(pendingContent);
-            setContentFadeState("fading-in");
-          }
-        }, ANIMATION_CONFIG.fade.duration);
-        
-        return () => clearTimeout(timer);
-      } 
-      else if (contentFadeState === "fading-in") {
-        // 淡入动画结束后，设置为可见状态
-        const timer = setTimeout(() => {
-          setContentFadeState("visible");
-          setIsTransitioning(false);
-          setPrevContent(null);
-        }, ANIMATION_CONFIG.fade.fadeInDuration);
-        
-        return () => clearTimeout(timer);
-      }
-    }, [contentFadeState, pendingContent]);
+    }, [activeIssue, issues.length]);
     
     if (!currentContent) return null;
     
@@ -160,34 +112,32 @@ export const ContentSection = forwardRef<HTMLDivElement>(
             className="w-full max-w-md relative pointer-events-auto"
             initial="initial"
             whileHover="hover"
+            onHoverStart={() => setIsHovering(true)}
+            onHoverEnd={() => setIsHovering(false)}
           >
             {/* 可视的颜色块 */}
             <motion.div
-              className="rounded-2xl w-full cursor-pointer"
+              className="rounded-2xl w-full cursor-pointer relative overflow-hidden"
               style={{ backgroundColor: currentContent.color }}
               variants={{
                 initial: { height: 300 },
                 hover: { height: 450 }
               }}
               transition={ANIMATION_CONFIG.presets.contentCard.transition}
+              layoutId="colorBlock"
+              key={currentContent.number}
             >
-              {/* 过渡层 - 仅在切换期数时显示 */}
-              <AnimatePresence>
-                {isTransitioning && prevContent && (
-                  <motion.div 
-                    className="absolute inset-0 pointer-events-none rounded-2xl"
-                    initial={{ opacity: 1 }}
-                    animate={{ 
-                      opacity: contentFadeState === "fading-out" ? 1 : 0
-                    }}
-                    exit={{ opacity: 0 }}
-                    transition={ANIMATION_CONFIG.presets.contentTransition.fadeOut.transition}
-                    style={{
-                      backgroundColor: prevContent.color,
-                      zIndex: 1
-                    }}
-                  />
-                )}
+              {/* 内容过渡效果 */}
+              <AnimatePresence mode="wait">
+                <motion.div 
+                  key={`color-content-${currentContent.number}`}
+                  className="absolute inset-0 rounded-2xl"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={ANIMATION_CONFIG.presets.contentCard.transition}
+                  style={{ backgroundColor: currentContent.color }}
+                />
               </AnimatePresence>
             </motion.div>
             
@@ -211,26 +161,38 @@ export const ContentSection = forwardRef<HTMLDivElement>(
                 >
                   这周有什么新鲜事 👀 ?
                 </motion.div>
-                <motion.h3 
-                  className="text-3xl font-newyork font-bold mb-1"
-                  variants={{
-                    initial: { transform: "translateY(0)" },
-                    hover: { transform: "translateY(150px)" }
-                  }}
-                  transition={ANIMATION_CONFIG.presets.contentCard.transition}
-                >
-                  {currentContent.title}
-                </motion.h3>
-                <motion.p 
-                  className="text-xl font-newyork text-gray-700 mb-4"
-                  variants={{
-                    initial: { transform: "translateY(0)" },
-                    hover: { transform: "translateY(150px)" }
-                  }}
-                  transition={ANIMATION_CONFIG.presets.contentCard.transition}
-                >
-                  {currentContent.subtitle}
-                </motion.p>
+                <AnimatePresence mode="wait">
+                  <motion.h3 
+                    key={`title-${currentContent.number}`}
+                    className="text-3xl font-newyork font-bold mb-1"
+                    variants={{
+                      initial: { transform: "translateY(0)" },
+                      hover: { transform: "translateY(150px)" }
+                    }}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={ANIMATION_CONFIG.presets.contentCard.transition}
+                  >
+                    {currentContent.title}
+                  </motion.h3>
+                </AnimatePresence>
+                <AnimatePresence mode="wait">
+                  <motion.p 
+                    key={`subtitle-${currentContent.number}`}
+                    className="text-xl font-newyork text-gray-700 mb-4"
+                    variants={{
+                      initial: { transform: "translateY(0)" },
+                      hover: { transform: "translateY(150px)" }
+                    }}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={ANIMATION_CONFIG.presets.contentCard.transition}
+                  >
+                    {currentContent.subtitle}
+                  </motion.p>
+                </AnimatePresence>
                 <motion.div 
                   className="space-y-1 text-center"
                   initial={{ opacity: 0 }}
@@ -245,45 +207,49 @@ export const ContentSection = forwardRef<HTMLDivElement>(
                     }
                   }}
                 >
-                  {currentContent.items.map((item, index) => (
-                    <motion.p 
-                      key={index} 
-                      className="text-base"
-                      variants={{
-                        initial: { y: 150 + index * 20, opacity: 0 },
-                        hover: { 
-                          y: 150,
-                          opacity: 1,
-                          transition: {
-                            duration: 1.2,
-                            ease: ANIMATION_CONFIG.font.ease,
-                            delay: index * 0.08
-                          }
-                        }
-                      }}
-                    >
-                      {item}
-                    </motion.p>
-                  ))}
-                  {currentContent.author && (
-                    <motion.p 
-                      className="text-base text-gray-600 mt-4 opacity-70"
-                      variants={{
-                        initial: { y: 150 + currentContent.items.length * 20, opacity: 0 },
-                        hover: { 
-                          y: 150,
-                          opacity: 0.7,
-                          transition: {
-                            duration: 1.2,
-                            ease: ANIMATION_CONFIG.font.ease,
-                            delay: currentContent.items.length * 0.08 + 0.1
-                          }
-                        }
-                      }}
-                    >
-                      {currentContent.author}
-                    </motion.p>
-                  )}
+                  <AnimatePresence mode="wait">
+                    <motion.div key={`items-${currentContent.number}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                      {currentContent.items.map((item, index) => (
+                        <motion.p 
+                          key={index} 
+                          className="text-base"
+                          variants={{
+                            initial: { y: 150 + index * 20, opacity: 0 },
+                            hover: { 
+                              y: 150,
+                              opacity: 1,
+                              transition: {
+                                duration: 1.2,
+                                ease: ANIMATION_CONFIG.font.ease,
+                                delay: index * 0.08
+                              }
+                            }
+                          }}
+                        >
+                          {item}
+                        </motion.p>
+                      ))}
+                      {currentContent.author && (
+                        <motion.p 
+                          className="text-base text-gray-600 mt-4 opacity-70"
+                          variants={{
+                            initial: { y: 150 + currentContent.items.length * 20, opacity: 0 },
+                            hover: { 
+                              y: 150,
+                              opacity: 0.7,
+                              transition: {
+                                duration: 1.2,
+                                ease: ANIMATION_CONFIG.font.ease,
+                                delay: currentContent.items.length * 0.08 + 0.1
+                              }
+                            }
+                          }}
+                        >
+                          {currentContent.author}
+                        </motion.p>
+                      )}
+                    </motion.div>
+                  </AnimatePresence>
                 </motion.div>
               </div>
             </motion.div>
@@ -297,7 +263,7 @@ export const ContentSection = forwardRef<HTMLDivElement>(
           animate={{ 
             top: browseMode ? '50%' : 0,
             transform: browseMode ? "translateY(-50%)" : "translateY(0)",
-            opacity: contentFadeState === "visible" ? 1 : (contentFadeState === "fading-out" ? 0 : 1)
+            opacity: 1
           }}
           transition={ANIMATION_CONFIG.presets.contentCard.transition}
         >
@@ -305,20 +271,24 @@ export const ContentSection = forwardRef<HTMLDivElement>(
             className="w-full max-w-md flex items-center justify-center"
             initial={{ height: 300, opacity: 1 }}
             animate={{ 
-              height: browseMode ? 150 : 300,
-              opacity: contentFadeState === "visible" ? 1 : (contentFadeState === "fading-out" ? 0 : 1)
+              height: browseMode ? 150 : 300
             }}
             transition={ANIMATION_CONFIG.presets.contentCard.transition}
           >
-            <motion.div 
-              initial={{ scale: 1 }}
-              animate={{ 
-                scale: browseMode ? 0.7 : 1
-              }}
-              transition={ANIMATION_CONFIG.presets.contentCard.transition}
-            >
-              {renderIcon(currentContent.icon)}
-            </motion.div>
+            <AnimatePresence mode="wait">
+              <motion.div 
+                key={`icon-${currentContent.number}`}
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ 
+                  opacity: isHovering && !browseMode ? 0.3 : 1,
+                  scale: browseMode ? 0.7 : 1
+                }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                transition={ANIMATION_CONFIG.presets.contentCard.transition}
+              >
+                {renderIcon(currentContent.icon)}
+              </motion.div>
+            </AnimatePresence>
           </motion.div>
         </motion.div>
       </motion.div>

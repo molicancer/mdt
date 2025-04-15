@@ -542,6 +542,33 @@ function DateInfo({
 }) {
   if (!issueData || browseMode) return null;
   
+  // 格式化日期信息
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return { formattedDate: '', weekday: '' };
+    
+    try {
+      const date = new Date(dateString);
+      // 格式化为 "月份 日 年份" 格式
+      const formattedDate = date.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+      });
+      
+      // 获取星期几
+      const weekday = date.toLocaleDateString('en-US', { weekday: 'long' });
+      
+      return { formattedDate, weekday };
+    } catch (error) {
+      console.error('日期格式化错误', error);
+      return { formattedDate: '', weekday: '' };
+    }
+  };
+  
+  const { formattedDate, weekday } = formatDate(issueData.date);
+  // 显示期数状态文本，无论是否是最新
+  // const statusText = issueData.isLatest ? 'the latest' : `Vol ${issueData.number}`;
+  
   return (
     <motion.div 
       className="absolute top-36 will-change-transform transform-gpu"
@@ -554,7 +581,8 @@ function DateInfo({
       style={{ pointerEvents: 'none' }}
     >
       <p className="text-[#545454]">
-        the latest Feb 23 2025 <br /> Monday updated
+        {/* {statusText} {formattedDate} <br /> {weekday} updated */}
+        the latest {formattedDate} <br /> {weekday} updated
       </p>
     </motion.div>
   );
