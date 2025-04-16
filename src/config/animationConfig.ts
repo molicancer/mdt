@@ -178,6 +178,15 @@ export const ANIMATION_CONFIG = {
         ease: "easeInOut"
       }
     },
+    
+    // 鼠标滚动图标动画
+    mouseScrollIcon: {
+      transition: {
+        duration: 0.75,
+        repeat: Infinity,
+        ease: "easeInOut"
+      }
+    },
 
     // 浏览按钮动画
     browseButton: {

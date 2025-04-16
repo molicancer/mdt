@@ -24,13 +24,10 @@ export function useUpdateAnimationStore(
   // 将动画值同步到Zustand存储，只在非初始阶段更新
   useEffect(() => {
     // 如果处于初始阶段，不更新任何动画状态
-    if (isInitialStage) {
-      return;
-    }
-    
     // 只在非初始阶段更新动画状态
     useAnimationStore.getState().updateAnimationValues(animationValues);
   }, [animationValues, isInitialStage]);
+  
   
   // 仍然返回动画值，以便直接使用
   return isInitialStage ? 

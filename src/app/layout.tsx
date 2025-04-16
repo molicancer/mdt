@@ -28,7 +28,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="zh-CN" suppressHydrationWarning>
+    <html lang="zh-CN" suppressHydrationWarning className="overflow-hidden">
       <head>
         <script
           dangerouslySetInnerHTML={{
@@ -62,10 +62,17 @@ export default function RootLayout({
       </head>
       <body
         className={cn(
-          "min-h-screen bg-background font-sans antialiased",
+          "min-h-screen font-sans antialiased",
           geistSans.variable,
           geistMono.variable
         )}
+        style={{
+          backgroundImage: "url('/background.png')",
+          backgroundPosition: "center center",
+          backgroundSize: "auto",
+          backgroundRepeat: "repeat",
+          backgroundAttachment: "fixed"
+        }}
       >
         <ThemeProvider
           attribute="class"

@@ -6,15 +6,12 @@ import { ContentSection } from "@/components/home/ContentSection";
 import { FooterNav } from "@/components/home/FooterNav";
 import { HeaderNav } from "@/components/home/HeaderNav";
 import { HeroTitle } from "@/components/home/HeroTitle";
-import { InfoText } from "@/components/home/InfoText";
-import { SelectIssueHint } from "@/components/home/SelectIssueHint";
-import { VolNumberElements } from "@/components/home/VolNumberElements";
-import { BrowseButton } from "@/components/home/BrowseButton";
 import { DebugPanel } from "@/components/debug/DebugPanel";
 import { useUpdateAnimationStore } from "@/hooks/use-update-animation-store";
 import { useAnimationStore } from "@/store/animationStore";
 import { Loader } from "@/components/ui/loader";
 import { useUIStore } from '@/store/uiStore';
+import { motion } from "framer-motion";
 
 // 是否显示调试面板，生产环境下默认为false
 const SHOW_DEBUG_PANEL = process.env.NODE_ENV === 'development';
@@ -61,18 +58,17 @@ export default function Home() {
     const timer = setTimeout(() => setIsPageLoaded(true), 300);
     
     return () => clearTimeout(timer);
-  }, [updateAnimationValues, setActiveIssueOffset, setVisibility]);
+  }, []);
   
   // 当用户开始滚动或触摸滑动时退出初始阶段的函数
   const exitInitialStage = useCallback(() => {
     setInitialStage(false);
-    // 确保元素可见性
-    setVisibility(true);
+    // 确保元素可见性 - setVisibility(true) 已移除
     updateAnimationValues({
       elementsOpacity: 1,
       dateOpacity: 1
     });
-  }, [setInitialStage, updateAnimationValues, setVisibility]);
+  }, []);
   
   // 第一阶段相关：用于检测wheel事件然后退出初始阶段
   useEffect(() => {
@@ -85,9 +81,28 @@ export default function Home() {
       // 如果滚动被锁定，不处理wheel事件
       if (scrollLocked) return;
       
-      if (isInitialStage) {
-        e.preventDefault();
+      // 阻止默认滚动行为，禁止页面滚动导航
+      e.preventDefault();
+      
+      
+      // 向下滚动 - 触发标题移出
+      if (e.deltaY > 0 && isInitialStage) {
         exitInitialStage();
+      } 
+      // 向上滚动且已经滚动过 - 恢复初始状态
+      else if (e.deltaY < 0 && !isInitialStage && window.scrollY <= 0) {
+        setInitialStage(true);
+        // 重置动画状态
+        updateAnimationValues({
+          titleTransform: 0,
+          titleOpacity: 1,
+          volTransform: 0,
+          numberTransform: 0,
+          elementsOpacity: 0,
+          dateOpacity: 0,
+          dateCurrentX: 0,
+          scrollProgress: 0
+        });
       }
     };
     
@@ -95,9 +110,30 @@ export default function Home() {
       // 如果滚动被锁定，不处理触摸事件
       if (scrollLocked) return;
       
+      // 阻止默认触摸移动行为，禁止页面滚动导航
+      e.preventDefault();
+      
+      // 如果是初始阶段，向下滑动就退出初始阶段
       if (isInitialStage) {
-        e.preventDefault();
         exitInitialStage();
+      }
+      // 如果不是初始阶段，且在页面顶部，向上滑动恢复初始状态
+      else if (!isInitialStage && window.scrollY <= 0) {
+        // 检测向上滑动手势 - 简化版，实际项目中可能需要更复杂的检测
+        if (e.touches && e.touches.length > 0) {
+          setInitialStage(true);
+          // 重置动画状态
+          updateAnimationValues({
+            titleTransform: 0,
+            titleOpacity: 1,
+            volTransform: 0,
+            numberTransform: 0,
+            elementsOpacity: 0,
+            dateOpacity: 0,
+            dateCurrentX: 0,
+            scrollProgress: 0
+          });
+        }
       }
     };
     
@@ -111,7 +147,7 @@ export default function Home() {
       }
     );
     
-    // 添加事件监听器
+    // 添加事件监听器，设置passive为false以允许preventDefault
     window.addEventListener('wheel', handleWheel, { passive: false });
     window.addEventListener('touchmove', handleTouchMove, { passive: false });
     
@@ -120,7 +156,7 @@ export default function Home() {
       window.removeEventListener('touchmove', handleTouchMove);
       unsubscribe(); // 清理订阅
     };
-  }, [isInitialStage, isPageLoaded, exitInitialStage]);
+  }, [isInitialStage, isPageLoaded, exitInitialStage, setInitialStage, updateAnimationValues]);
   
   // 使用新的钩子，自动将动画值同步到Zustand
   useUpdateAnimationStore(titleRef, {
@@ -133,37 +169,29 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen h-screen overflow-hidden bg-background">
-      {/* 顶部导航：z-31 - 只在非初始阶段显示 */}
-      {!isInitialStage && <HeaderNav />}
-
-      {/* 底部提示：z-31 - 始终显示 */}
-      <FooterNav />
-
-      {/* "Select the issue number"提示 - 只在非初始阶段显示 */}
-      {!isInitialStage && <SelectIssueHint />}
-      
-      {/* "Vol"和"期数"标题 */}
-      <VolNumberElements
-        visibilityConfig={{
-          initialVisible: !isInitialStage,
-        }}
+    <main className="relative min-h-screen h-screen overflow-hidden">
+      {/* 背景层 - 单独动画 */}
+      <motion.div
+        className="absolute inset-0 -z-10"
+        style={{ backgroundColor: 'var(--background)' }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: isInitialStage ? 0 : 1 }}
+        transition={{ duration: 0.5, ease: "easeInOut" }}
       />
-      
-      {/* 模糊遮罩：z-30 - 只在非初始阶段显示 */}
-      {!isInitialStage && <BlurMasks />}
-      
-      {/* 浏览按钮 - 只在非初始阶段显示 */}
-      {!isInitialStage && <BrowseButton />}
 
-      {/* 大标题区域 - 始终显示 */}
+      {/* 顶部导航 */}
+      <HeaderNav />
+
+      {/* 底部提示 */}
+      <FooterNav />
+            
+      {/* 模糊遮罩：z-30 */}
+      <BlurMasks />
+            
       <HeroTitle ref={titleRef} />
-      
-      {/* 信息文本区域 - 始终显示 */}
-      <InfoText />
 
-      {/* 中间内容区域 - 只在非初始阶段显示 */}
-      {!isInitialStage && <ContentSection />}
+      {/* 中间内容区域 */}
+      <ContentSection />
 
       {/* 调试面板 - 只在开发环境显示 */}
       {SHOW_DEBUG_PANEL && <DebugPanel />}

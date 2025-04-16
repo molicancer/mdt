@@ -14,17 +14,15 @@ export const ContentSection = forwardRef<HTMLDivElement>(
     // 从 Zustand 获取 browseMode 和 activeIssue
     const { browseMode, activeIssue } = useUIStore();
     
-    // 从 animationStore 获取 scrollProgress
+    // 从 animationStore 获取 scrollProgress 和 isInitialStage
     const scrollProgress = useAnimationStore(state => state.scrollProgress);
+    const isInitialStage = useAnimationStore(state => state.isInitialStage);
     
     // 状态: 期刊数据
     const [issues, setIssues] = useState<IssueContent[]>([]);
     
     // 状态: 当前内容
     const [currentContent, setCurrentContent] = useState<IssueContent | null>(null);
-    
-    // hover状态
-    const [isHovering, setIsHovering] = useState(false);
     
     // 加载期刊数据并处理期数变化
     useEffect(() => {
@@ -81,216 +79,119 @@ export const ContentSection = forwardRef<HTMLDivElement>(
     if (!currentContent) return null;
     
     // 渲染图标 - 直接使用图片URL
-    const renderIcon = (iconUrl: string) => {
-      return (
-        <Image src={iconUrl} alt={`vol${currentContent?.number}`} width={200} height={200} />
-      );
-    };
     
     return (
       <motion.div 
         ref={ref}
-        className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-xl z-[21] pointer-events-none"
+        className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full z-[21] pointer-events-none"
         initial={{ opacity: 0 }}
         animate={{ 
           opacity: browseMode ? 1 : (scrollProgress > SCROLL_THRESHOLDS.CONTENT_SHOW ? 1 : 0),
         }}
         transition={ANIMATION_CONFIG.presets.contentCard.transition}
       >
-        {/* 颜色区域整体容器 - 浏览模式下隐藏 */}
-        <motion.div 
-          className="flex justify-center relative"
-          initial={{ opacity: 1, visibility: "visible" }}
-          animate={{ 
-            opacity: browseMode ? 0 : 1,
-            visibility: browseMode ? "hidden" : "visible"
-          }}
-          transition={ANIMATION_CONFIG.presets.contentCard.transition}
-        >
-          {/* 主颜色区域 - 悬停触发区域限制在这个div内 */}
+        {/* 新增：垂直Flex容器，用于包裹图标和文字，并居中 */}
+        <div className="fixed inset-0 flex flex-col items-center justify-center z-30 pointer-events-none">
+          
+          {/* 图标部分 - 作为Flex子项 */}
           <motion.div 
-            className="w-full max-w-md relative pointer-events-auto"
-            initial="initial"
-            whileHover="hover"
-            onHoverStart={() => setIsHovering(true)}
-            onHoverEnd={() => setIsHovering(false)}
-          >
-            {/* 可视的颜色块 */}
-            <motion.div
-              className="rounded-2xl w-full cursor-pointer relative overflow-hidden"
-              style={{ backgroundColor: currentContent.color }}
-              variants={{
-                initial: { height: 300 },
-                hover: { height: 450 }
-              }}
-              transition={ANIMATION_CONFIG.presets.contentCard.transition}
-              layoutId="colorBlock"
-              key={currentContent.number}
-            >
-              {/* 内容过渡效果 */}
-              <AnimatePresence mode="wait">
-                <motion.div 
-                  key={`color-content-${currentContent.number}`}
-                  className="absolute inset-0 rounded-2xl"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={ANIMATION_CONFIG.presets.contentCard.transition}
-                  style={{ backgroundColor: currentContent.color }}
-                />
-              </AnimatePresence>
-            </motion.div>
-            
-            {/* 文字内容 - 仅在悬停时显示/移动 */}
-            <motion.div 
-              className="absolute w-full pointer-events-none"
-              variants={{
-                initial: { top: '340px', zIndex: 1 },
-                hover: { top: '0', zIndex: 10 }
-              }}
-              transition={ANIMATION_CONFIG.presets.contentCard.transition}
-            >
-              <div className="w-full text-center">
-                <motion.div 
-                  className="mb-3 text-sm font-medium"
-                  variants={{
-                    initial: { transform: "translateY(0)" },
-                    hover: { transform: "translateY(150px)" }
-                  }}
-                  transition={ANIMATION_CONFIG.presets.contentCard.transition}
-                >
-                  这周有什么新鲜事 👀 ?
-                </motion.div>
-                <AnimatePresence mode="wait">
-                  <motion.h3 
-                    key={`title-${currentContent.number}`}
-                    className="text-3xl font-newyork font-bold mb-1"
-                    variants={{
-                      initial: { transform: "translateY(0)" },
-                      hover: { transform: "translateY(150px)" }
-                    }}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={ANIMATION_CONFIG.presets.contentCard.transition}
-                  >
-                    {currentContent.title}
-                  </motion.h3>
-                </AnimatePresence>
-                <AnimatePresence mode="wait">
-                  <motion.p 
-                    key={`subtitle-${currentContent.number}`}
-                    className="text-xl font-newyork text-gray-700 mb-4"
-                    variants={{
-                      initial: { transform: "translateY(0)" },
-                      hover: { transform: "translateY(150px)" }
-                    }}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={ANIMATION_CONFIG.presets.contentCard.transition}
-                  >
-                    {currentContent.subtitle}
-                  </motion.p>
-                </AnimatePresence>
-                <motion.div 
-                  className="space-y-1 text-center"
-                  initial={{ opacity: 0 }}
-                  variants={{
-                    initial: { opacity: 0 },
-                    hover: { 
-                      opacity: 1,
-                      transition: { 
-                        staggerChildren: 0.1, 
-                        delayChildren: 0.3 
-                      }
-                    }
-                  }}
-                >
-                  <AnimatePresence mode="wait">
-                    <motion.div key={`items-${currentContent.number}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                      {currentContent.items.map((item, index) => (
-                        <motion.p 
-                          key={index} 
-                          className="text-base"
-                          variants={{
-                            initial: { y: 150 + index * 20, opacity: 0 },
-                            hover: { 
-                              y: 150,
-                              opacity: 1,
-                              transition: {
-                                duration: 1.2,
-                                ease: ANIMATION_CONFIG.font.ease,
-                                delay: index * 0.08
-                              }
-                            }
-                          }}
-                        >
-                          {item}
-                        </motion.p>
-                      ))}
-                      {currentContent.author && (
-                        <motion.p 
-                          className="text-base text-gray-600 mt-4 opacity-70"
-                          variants={{
-                            initial: { y: 150 + currentContent.items.length * 20, opacity: 0 },
-                            hover: { 
-                              y: 150,
-                              opacity: 0.7,
-                              transition: {
-                                duration: 1.2,
-                                ease: ANIMATION_CONFIG.font.ease,
-                                delay: currentContent.items.length * 0.08 + 0.1
-                              }
-                            }
-                          }}
-                        >
-                          {currentContent.author}
-                        </motion.p>
-                      )}
-                    </motion.div>
-                  </AnimatePresence>
-                </motion.div>
-              </div>
-            </motion.div>
-          </motion.div>
-        </motion.div>
-        
-        {/* 图标部分 - 与颜色区域分离，以便在浏览模式下保持可见 */}
-        <motion.div 
-          className={`${browseMode ? 'fixed inset-x-0 z-30' : 'absolute left-0 w-full'} flex justify-center pointer-events-none`}
-          initial={{ top: 0, transform: "translateY(0)", opacity: 1 }}
-          animate={{ 
-            top: browseMode ? '50%' : 0,
-            transform: browseMode ? "translateY(-50%)" : "translateY(0)",
-            opacity: 1
-          }}
-          transition={ANIMATION_CONFIG.presets.contentCard.transition}
-        >
-          <motion.div 
-            className="w-full max-w-md flex items-center justify-center"
-            initial={{ height: 300, opacity: 1 }}
-            animate={{ 
-              height: browseMode ? 150 : 300
+            className="flex items-center justify-center" 
+            initial={{ opacity: 0 }}
+            animate={{
+              opacity: isInitialStage ? 0 : 1
             }}
             transition={ANIMATION_CONFIG.presets.contentCard.transition}
           >
-            <AnimatePresence mode="wait">
+            
+            {/* Vol 文字 */}
+            <motion.div 
+              className="flex items-center mr-4"
+              initial={{ opacity: 0, x: -150 }}
+              animate={{
+                opacity: isInitialStage ? 0 : 1,
+                x: isInitialStage ? -150 : 0,
+              }}
+              transition={ANIMATION_CONFIG.presets.contentCard.transition}
+            >
+              <h2 className={`${ANIMATION_CONFIG.volNumber.base.fontFamily} leading-none`} 
+                  style={{ 
+                    fontSize: `${ANIMATION_CONFIG.volNumber.base.fontSize}px`
+                  }}>
+                Vol
+              </h2>
+            </motion.div>
+            
+            {/* 图标 */}
+            <AnimatePresence>
               <motion.div 
                 key={`icon-${currentContent.number}`}
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ 
-                  opacity: isHovering && !browseMode ? 0.3 : 1,
-                  scale: browseMode ? 0.7 : 1
-                }}
-                exit={{ opacity: 0, scale: 0.8 }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
                 transition={ANIMATION_CONFIG.presets.contentCard.transition}
+                className="flex-shrink-0"
               >
-                {renderIcon(currentContent.icon)}
+                <Image src={currentContent.icon} alt={`vol${currentContent?.number}`} width={200} height={200} />
               </motion.div>
             </AnimatePresence>
+            
+            {/* 期数 */}
+            <motion.div 
+              className="flex items-center ml-4"
+              initial={{ opacity: 0, x: 150 }}
+              animate={{
+                opacity: isInitialStage ? 0 : 1,
+                x: isInitialStage ? 150 : 0,
+              }}
+              transition={ANIMATION_CONFIG.presets.contentCard.transition}
+            >
+              <h2 className={`${ANIMATION_CONFIG.volNumber.base.fontFamily} leading-none`} 
+                  style={{ 
+                    fontSize: `${ANIMATION_CONFIG.volNumber.base.fontSize}px`
+                  }}>
+                {currentContent.number}
+              </h2>
+            </motion.div>
           </motion.div>
-        </motion.div>
+          
+          {/* 下方文字区域 - 作为Flex子项，移除绝对定位，添加上边距 */}
+          <motion.div 
+            className="w-full text-center mt-30 pointer-events-none"
+            initial={{ opacity: 0 }}
+            animate={{ 
+              opacity: isInitialStage ? 0 : 1
+            }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+          >
+            {/* 第一行文字 */} 
+            <motion.p 
+              className="font-newyork-large text-base mb-3.5"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ 
+                opacity: isInitialStage ? 0 : 1,
+                y: isInitialStage ? 20 : 0
+              }}
+              transition={{ duration: 0.4, delay: 0.1, ease: "easeInOut" }}
+            >
+              ✨ The biggest topic of Issue {currentContent.number}
+            </motion.p>
+
+            {/* 第二行文字 */} 
+            <motion.h3 
+              className="font-newyork-large text-2xl font-semibold"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ 
+                opacity: isInitialStage ? 0 : 1,
+                y: isInitialStage ? 20 : 0
+              }}
+              transition={{ duration: 0.7, delay: 0.3, ease: "easeInOut" }}
+            >
+              {currentContent.title}
+            </motion.h3>
+          </motion.div>
+        </div>
+
+        {/* 中间内容区域 - 注释掉或按需保留 */}
+        {/* <motion.div ... /> */}
       </motion.div>
     );
   }

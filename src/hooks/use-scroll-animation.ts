@@ -35,7 +35,6 @@ export function useScrollAnimation(
   // 从scrollStore获取滚动状态
   const scrollY = useScrollStore(state => state.scrollY);
   const isScrolling = useScrollStore(state => state.isScrolling);
-  const scrollDirection = useScrollStore(state => state.scrollDirection);
   
   // 从uiStore获取滚动锁定状态
   const scrollLocked = useUIStore(state => state.scrollLocked);
@@ -95,47 +94,52 @@ export function useScrollAnimation(
       // 如果滚动被锁定，不处理wheel事件
       if (scrollLocked) return;
       
-      // 累积deltaY值，用于计算虚拟滚动量
-      accumulatedWheelDelta.current += e.deltaY;
+      // 阻止默认滚动行为
+      e.preventDefault();
       
-      // 限制累积值范围
-      accumulatedWheelDelta.current = Math.max(0, Math.min(100, accumulatedWheelDelta.current));
       
-      // 计算滚动进度比例，范围0-1
-      const progress = accumulatedWheelDelta.current / 100;
-      targetScrollProgress.current = progress;
-      
-      // 当滚动到一定程度时显示中间内容
-      if (progress > 0.6 && !contentVisible) {
-        setContentVisible(true);
-      } else if (progress < 0.3 && contentVisible) {
-        setContentVisible(false);
+      // 向下滚动 - 直接设置最大滚动值
+      if (e.deltaY > 0) {
+        // 直接设置为100%，触发完整动画
+        accumulatedWheelDelta.current = 100;
+        targetScrollProgress.current = 1;
+        setScrollProgress(1);
+        
+        if (!contentVisible) {
+          setContentVisible(true);
+        }
+      } 
+      // 向上滚动 - 回到顶部时重置
+      else if (e.deltaY < 0 && window.scrollY <= 0) {
+        // 重置为0
+        accumulatedWheelDelta.current = 0;
+        targetScrollProgress.current = 0;
+        setScrollProgress(0);
+        
+        if (contentVisible) {
+          setContentVisible(false);
+        }
       }
+      
     };
 
-    window.addEventListener('wheel', handleWheel, { passive: true });
-    
-    return () => {
-      window.removeEventListener('wheel', handleWheel);
-    };
-  }, [contentVisible, scrollLocked]);
-
-  // 监听滚动方向，当向上滚动时减少累积量
-  useEffect(() => {
-    // 如果滚动被锁定，不处理滚动方向变化
-    if (scrollLocked) return;
-    
-    if (scrollDirection === 'up' && accumulatedWheelDelta.current > 0) {
-      accumulatedWheelDelta.current = Math.max(0, accumulatedWheelDelta.current - 2);
-      targetScrollProgress.current = accumulatedWheelDelta.current / 100;
+    // 只有在滚动未锁定时添加事件监听器
+    if (!scrollLocked) {
+      window.addEventListener('wheel', handleWheel, { passive: false });
+      
+      return () => {
+        window.removeEventListener('wheel', handleWheel);
+      };
     }
-  }, [scrollDirection, scrollLocked]);
+    
+    return undefined;
+  }, [contentVisible, scrollLocked]);
 
   // 计算标题位置的偏移量
   const titleTransform = calculateTransform(
     scrollProgress, 
     SCROLL_THRESHOLDS.TITLE_TRANSFORM, 
-    250
+    500
   );
   
   // 计算标题和说明文字的透明度

@@ -8,7 +8,7 @@ export function FooterNav() {
 
   return (
     <motion.footer 
-      className="fixed bottom-0 w-full z-31 mb-12 flex flex-col gap-2 items-center pointer-events-none"
+      className="fixed bottom-0 w-full z-31 mb-15 flex flex-col gap-2 items-center pointer-events-none"
       initial={{ opacity: 1, y: 0 }}
       animate={{ 
         opacity: isVisible ? 1 : 0,
@@ -18,16 +18,12 @@ export function FooterNav() {
     >
       <motion.div
         animate={{ 
-          y: [0, -10, 0],
+          y: [0, -6, 0],
         }}
-        transition={{
-          duration: 0.75,
-          repeat: Infinity,
-          ease: "easeInOut"
-        }}
+        transition={ANIMATION_CONFIG.presets.mouseScrollIcon.transition}
       >
         <Image 
-          src="/img/mouse.svg"
+          src="/icon/swipe-down.svg"
           alt="Scroll Down"
           width={24}
           height={40}
@@ -39,4 +35,4 @@ export function FooterNav() {
       </p>
     </motion.footer>
   );
-} 
+}
