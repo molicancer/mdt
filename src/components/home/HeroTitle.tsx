@@ -1,8 +1,6 @@
 import { forwardRef } from "react";
 import { motion } from "framer-motion";
 import { useAnimationStore } from "@/store/animationStore";
-import { useUIStore } from "@/store/uiStore";
-import { ANIMATION_CONFIG } from '@/config/animationConfig';
 
 export const HeroTitle = forwardRef<HTMLDivElement>(
   function HeroTitle(_, ref) {
@@ -42,7 +40,10 @@ export const HeroTitle = forwardRef<HTMLDivElement>(
             animate={{ 
               opacity: isVisible && isInitialStage ? 1 : 0 
             }}
-            transition={ANIMATION_CONFIG.presets.infoText.transition}
+            transition={{ 
+              duration: 0.5,
+              ease: "easeInOut"
+            }}
           >
             <p className="text-base text-[#545454] text-center relative">
               Share the latest design and artificial intelligence consulting<span className="text-black">「 weekly news 」</span><br />

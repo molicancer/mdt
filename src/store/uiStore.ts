@@ -1,5 +1,4 @@
 import { create } from 'zustand';
-import { useScrollStore } from './scrollStore';
 
 /**
  * UI状态接口
@@ -13,9 +12,6 @@ interface UIState {
   // 设置当前选中的期数
   setActiveIssue: (issue: number) => void;
 }
-
-// 帮助函数，访问scrollStore状态（避免hook循环引用问题）
-const getScrollStore = () => useScrollStore.getState();
 
 // 创建UI状态存储
 export const useUIStore = create<UIState>((set) => ({

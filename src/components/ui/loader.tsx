@@ -1,5 +1,4 @@
 import { motion } from "framer-motion";
-import { ANIMATION_CONFIG } from '@/config/animationConfig';
 
 export function Loader() {
   return (
@@ -8,7 +7,7 @@ export function Loader() {
         className="flex flex-col items-center"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={ANIMATION_CONFIG.presets.loader.transition}
+        transition={{ duration: 0.3 }}
       >
         <motion.div
           className="h-12 w-12 mb-4 rounded-full border-2 border-t-transparent border-primary"

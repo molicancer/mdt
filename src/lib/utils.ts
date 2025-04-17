@@ -6,20 +6,6 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
- * 从slug中提取期数
- * @param slug 格式为"volXX"的字符串
- * @returns 提取出的期数，如果无法提取则返回0
- */
-export function extractNumberFromSlug(slug: string): number {
-  // 从slug（volxx）中提取期数数字
-  const match = slug.match(/vol(\d+)/i);
-  if (match && match[1]) {
-    return parseInt(match[1], 10);
-  }
-  return 0; // 默认值
-}
-
-/**
  * 检查URL路径中是否包含期数
  * @param path URL路径
  * @returns 提取出的期数，如果没找到则返回null

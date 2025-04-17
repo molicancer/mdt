@@ -1,7 +1,6 @@
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { useGlobalScrollVisibility } from "@/store/animationStore";
-import { ANIMATION_CONFIG } from "@/config/animationConfig";
 
 export function FooterNav() {
   const isVisible = useGlobalScrollVisibility();
@@ -14,13 +13,20 @@ export function FooterNav() {
         opacity: isVisible ? 1 : 0,
         y: isVisible ? 0 : 20
       }}
-      transition={ANIMATION_CONFIG.presets.footerNav.transition}
+      transition={{ 
+        duration: 0.25,
+        ease: "easeInOut"
+      }}
     >
       <motion.div
         animate={{ 
           y: [0, -6, 0],
         }}
-        transition={ANIMATION_CONFIG.presets.mouseScrollIcon.transition}
+        transition={{
+          duration: 0.75,
+          repeat: Infinity,
+          ease: "easeInOut"
+        }}
       >
         <Image 
           src="/icon/swipe-down.svg"
