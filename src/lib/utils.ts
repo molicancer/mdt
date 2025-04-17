@@ -80,19 +80,3 @@ export function hasURLMarker(marker: string): boolean {
   
   return window.location.hash.includes(`&${marker}`);
 }
-
-/**
- * 检查URL是否包含直接进入第二阶段的标记
- * @returns 是否包含该标记
- */
-export function shouldEnterStage2(): boolean {
-  return hasURLMarker('s2');
-}
-
-/**
- * 检查URL是否包含直接进入浏览模式的标记
- * @returns 是否包含该标记
- */
-export function shouldEnterBrowseMode(): boolean {
-  return hasURLMarker('browse');
-}

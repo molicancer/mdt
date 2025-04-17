@@ -1,62 +1,44 @@
 import { create } from 'zustand';
-import { useUIStore } from './uiStore';
 
+/**
+ * 滚动状态接口
+ * 注意：可见性相关状态(isVisible)已移至animationStore中统一管理
+ * 注意：滚动锁定状态现在直接集成在scrollStore中，减少store间依赖
+ */
 interface ScrollState {
   // 滚动状态
-  isVisible: boolean;
   isScrolling: boolean;
   scrollY: number;
   accumulatedDelta: number; // 累积的wheel deltaY值
   scrollDirection: 'up' | 'down' | null;
   lastScrollTime: number;
   
-  // 方法
-  setVisibility: (isVisible: boolean) => void;
-  setScrolling: (isScrolling: boolean) => void;
-  setScrollY: (scrollY: number) => void;
-  setAccumulatedDelta: (delta: number) => void;
-  addToDelta: (amount: number) => void; // 增加累积值
-  setScrollDirection: (direction: 'up' | 'down' | null) => void;
-  setLastScrollTime: (time: number) => void;
+  // 滚动锁定状态 - 从uiStore迁移到这里集中管理所有滚动相关状态
+  scrollLocked: boolean;
+  setScrollLocked: (locked: boolean) => void;
   
   // 复合动作
   handleWheel: (e: WheelEvent) => void; // 处理wheel事件
 }
 
-// 帮助器函数，从外部获取滚动锁定状态
-// 注意：这里不能用useUIStore的hook，因为在zustand store创建过程中不能使用hooks
-// 所以我们创建一个函数在每次调用时获取最新的锁定状态
-const isScrollLocked = () => {
-  return useUIStore.getState().scrollLocked;
-};
-
 // 创建滚动状态存储
 export const useScrollStore = create<ScrollState>((set, get) => ({
   // 初始状态
-  isVisible: true,
   isScrolling: false,
   scrollY: 0,
   accumulatedDelta: 0,
   scrollDirection: null,
   lastScrollTime: 0,
+  scrollLocked: false, // 滚动锁定状态默认为false
   
-  // 基础方法
-  setVisibility: (isVisible) => set({ isVisible }),
-  setScrolling: (isScrolling) => set({ isScrolling }),
-  setScrollY: (scrollY) => set({ scrollY }),
-  setAccumulatedDelta: (accumulatedDelta) => set({ accumulatedDelta }),
-  addToDelta: (amount) => set(state => ({ 
-    accumulatedDelta: Math.max(0, Math.min(100, state.accumulatedDelta + amount)) 
-  })),
-  setScrollDirection: (scrollDirection) => set({ scrollDirection }),
-  setLastScrollTime: (lastScrollTime) => set({ lastScrollTime }),
+  // 设置滚动锁定状态
+  setScrollLocked: (locked: boolean) => set({ scrollLocked: locked }),
   
   // 处理wheel事件
   handleWheel: (e) => {
     // 如果滚动被锁定，不处理wheel事件
-    if (isScrollLocked()) return;
+    if (get().scrollLocked) return;
     
-    const state = get();
     const deltaY = e.deltaY;
     const now = Date.now();
     
@@ -85,12 +67,6 @@ export const useScrollStore = create<ScrollState>((set, get) => ({
     set(state => ({
       scrollY: state.accumulatedDelta
     }));
-    
-    // 只有向上滚动时才更新可见性状态
-    // 移除向下滚动时隐藏元素的逻辑
-    if (direction === 'up' && !state.isVisible) {
-      set({ isVisible: true });
-    }
     
     // 设置滚动状态超时
     setTimeout(() => {

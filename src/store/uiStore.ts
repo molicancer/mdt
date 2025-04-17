@@ -1,143 +1,28 @@
 import { create } from 'zustand';
+import { useScrollStore } from './scrollStore';
 
-// 期数数据接口
-export interface Issue {
-  id: number;        // WordPress文章ID
-  number: number;    // 实际显示的期数号（从slug中提取）
-  isLatest?: boolean; // 是否是最新一期
-  date?: string;      // 发布日期
-  title?: string;     // 期数标题
-  slug?: string;      // URL slug，用于导航
-}
-
-// 定义UI状态接口
-interface UIState {
-  // 浏览模式状态
-  browseMode: boolean;
-  // 切换浏览模式
-  toggleBrowseMode: () => void;
-  // 设置浏览模式
-  setBrowseMode: (value: boolean) => void;
-  
-  // 滚动锁定状态
-  scrollLocked: boolean;
-  // 设置滚动锁定状态
-  setScrollLocked: (locked: boolean) => void;
-  
+/**
+ * UI状态接口
+ * 注意：经过代码检查，移除了未使用的功能
+ * 注意：滚动锁定状态已迁移到scrollStore中集中管理
+ * 注意：Issue类型已统一迁移到types/issue.ts中
+ */
+interface UIState {  
   // 当前选中的期数
   activeIssue: number | null;
   // 设置当前选中的期数
   setActiveIssue: (issue: number) => void;
-  // 是否已初始化期数
-  isIssueInitialized: boolean;
-  // 标记期数已初始化
-  markIssueInitialized: () => void;
-  
-  // 期数数据
-  issues: Issue[];
-  // 设置期数数据
-  setIssues: (issues: Issue[]) => void;
-  
-  // 期数位置
-  issuePositions: Record<number, number>;
-  // 设置期数位置
-  setIssuePosition: (issueNumber: number, position: number) => void;
-  // 批量设置期数位置
-  setIssuePositions: (positions: Record<number, number>) => void;
-  
-  // 普通模式下的最后位置
-  lastNormalPositions: Record<number, number>;
-  // 设置最后位置
-  setLastNormalPositions: (positions: Record<number, number>) => void;
-  
-  // 当前活动期数值 (总是有值的版本)
-  currentActiveIssue: number;
-  // 设置当前活动期数值
-  setCurrentActiveIssue: (issue: number) => void;
 }
+
+// 帮助函数，访问scrollStore状态（避免hook循环引用问题）
+const getScrollStore = () => useScrollStore.getState();
 
 // 创建UI状态存储
 export const useUIStore = create<UIState>((set) => ({
   // 初始状态
-  browseMode: false,
-  scrollLocked: false, // 初始状态为未锁定
   activeIssue: null, // 初始为 null，表示尚未从 API 获取
-  isIssueInitialized: false,
-  issues: [],
-  issuePositions: {},
-  lastNormalPositions: {},
-  currentActiveIssue: 0, // 初始为0，表示尚未从API获取，将在数据加载后更新
-  
-  // 状态更新方法
-  toggleBrowseMode: () => set((state) => {
-    const newBrowseMode = !state.browseMode;
-    // 切换浏览模式时同时更新滚动锁定状态
-    return { 
-      browseMode: newBrowseMode,
-      scrollLocked: newBrowseMode // 进入浏览模式时锁定，退出时解锁
-    };
-  }),
-  
-  setBrowseMode: (value: boolean) => set({ 
-    browseMode: value,
-    scrollLocked: value // 设置浏览模式的同时更新锁定状态
-  }),
-  
-  // 独立设置滚动锁定状态的方法
-  setScrollLocked: (locked: boolean) => set({
-    scrollLocked: locked
-  }),
   
   setActiveIssue: (issue: number) => set({ 
-    activeIssue: issue,
-    currentActiveIssue: issue, // 同步更新currentActiveIssue
-    isIssueInitialized: true
-  }),
-  
-  markIssueInitialized: () => set({
-    isIssueInitialized: true
-  }),
-  
-  // 期数数据方法
-  setIssues: (issues: Issue[]) => set(state => {
-    // 如果currentActiveIssue为0（初始值），则使用最新期数
-    let updatedCurrentIssue = state.currentActiveIssue;
-    
-    if (updatedCurrentIssue === 0 && issues.length > 0) {
-      // 查找标记为最新的期数
-      const latestIssue = issues.find(issue => issue.isLatest);
-      // 如果找到标记为最新的，使用它；否则使用第一个（通常是最新的）
-      updatedCurrentIssue = latestIssue ? latestIssue.number : issues[0].number;
-    }
-    
-    return {
-      issues,
-      currentActiveIssue: updatedCurrentIssue
-    };
-  }),
-  
-  // 期数位置方法
-  setIssuePosition: (issueNumber: number, position: number) => set((state) => ({
-    issuePositions: { 
-      ...state.issuePositions, 
-      [issueNumber]: position 
-    }
-  })),
-  
-  setIssuePositions: (positions: Record<number, number>) => set((state) => ({
-    issuePositions: { 
-      ...state.issuePositions, 
-      ...positions 
-    }
-  })),
-  
-  // 最后位置方法
-  setLastNormalPositions: (positions: Record<number, number>) => set({ 
-    lastNormalPositions: positions 
-  }),
-  
-  // 当前活动期数方法
-  setCurrentActiveIssue: (issue: number) => set({ 
-    currentActiveIssue: issue 
+    activeIssue: issue
   })
 })); 

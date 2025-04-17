@@ -5,11 +5,20 @@ import { extractNumberFromSlug } from '@/lib/utils';
 // 作者信息缓存，避免重复请求
 const authorCache: Record<number, string> = {};
 
+// 文章内容接口
+export interface ArticleData {
+  content: string;
+  createdAt: string;
+  author: string;
+  // 其他可能的字段
+}
+
 // API 适配器接口
 export interface ApiAdapter {
   getAllIssues(): Promise<IssueContent[]>;
   getIssueByNumber(issueNumber: number): Promise<IssueContent | null>;
   getLatestIssue(): Promise<IssueContent | null>;
+  getArticleContent(issueNumber: number): Promise<ArticleData>;
 }
 
 // Strapi响应的Issue类型
@@ -17,7 +26,6 @@ interface StrapiIssue {
   id: number;
   attributes: {
     number: number;
-    color?: string;
     title: string;
     subtitle?: string;
     items?: string[];
@@ -110,13 +118,13 @@ export class WordPressApiAdapter implements ApiAdapter {
         result.push({
           id: post.id,
           number,
-          color: this.getColorForIssue(number), // 根据期数生成颜色
           title: post.title.rendered,
           subtitle: post.excerpt.rendered.replace(/<[^>]*>/g, '').trim() || `Vol ${number}`, // 使用摘要作为副标题
           items: h2Contents, // 使用H2标签内容作为items
           author: authorName,
           icon: iconUrl, // 使用特色图片URL
-          date: new Date(post.date).toISOString().split('T')[0]
+          date: new Date(post.date).toISOString().split('T')[0],
+          slug: post.slug
         });
       }
       
@@ -145,9 +153,44 @@ export class WordPressApiAdapter implements ApiAdapter {
     try {
       const allIssues = await this.getAllIssues();
       // 按期数降序排序，取第一个
-      return allIssues[0] || null;
+      if (allIssues.length > 0) {
+        const latestIssue = allIssues[0];
+        latestIssue.isLatest = true; // 标记为最新
+        return latestIssue;
+      }
+      return null;
     } catch (error) {
       console.error('获取最新期数失败:', error);
+      throw error;
+    }
+  }
+  
+  // 获取文章详细内容
+  async getArticleContent(issueNumber: number): Promise<ArticleData> {
+    try {
+      // 先通过期数获取到对应的文章
+      const issue = await this.getIssueByNumber(issueNumber);
+      
+      if (!issue) {
+        throw new Error(`找不到期数 ${issueNumber} 的内容`);
+      }
+      
+      // 获取文章详情
+      const response = await fetch(`${this.baseUrl}${this.endpoints.posts}/${issue.id}`);
+      
+      if (!response.ok) {
+        throw new Error(`API错误: ${response.status}`);
+      }
+      
+      const post = await response.json();
+      
+      return {
+        content: post.content.rendered || `<p>Vol ${issueNumber} 的文章内容暂未上传。</p>`,
+        createdAt: post.date,
+        author: issue.author ?? "MDT" // 使用默认作者名称替代undefined
+      };
+    } catch (error) {
+      console.error(`获取期数 ${issueNumber} 的文章内容失败:`, error);
       throw error;
     }
   }
@@ -172,25 +215,6 @@ export class WordPressApiAdapter implements ApiAdapter {
     }
     
     return items;
-  }
-
-  // 根据期数生成一致的颜色
-  private getColorForIssue(number: number): string {
-    // 可用的颜色数组
-    const colors = [
-      "#FF9E80", // 橙红色
-      "#90CAF9", // 蓝色
-      "#81C784", // 绿色
-      "#B39DDB", // 紫色
-      "#FFCC80", // 橙色
-      "#F48FB1", // 粉色
-      "#A1887F", // 棕色
-      "#90A4AE"  // 蓝灰色
-    ];
-    
-    // 使用模运算确保颜色循环使用
-    const colorIndex = (number % colors.length);
-    return colors[colorIndex];
   }
 }
 
@@ -220,16 +244,18 @@ export class StrapiApiAdapter implements ApiAdapter {
       
       return issues.map((issue: StrapiIssue) => {
         const attributes = issue.attributes;
+        const number = attributes.number;
+        
         return {
           id: issue.id,
-          number: attributes.number,
-          color: attributes.color || this.getColorForIssue(attributes.number),
+          number,
           title: attributes.title,
-          subtitle: attributes.subtitle || `Vol ${attributes.number}`,
+          subtitle: attributes.subtitle || `Vol ${number}`,
           items: attributes.items || ["本期暂无目录"],
           author: attributes.author || "MDT",
           icon: attributes.icon?.data?.attributes?.url || "/test.png",
-          date: attributes.date || new Date().toISOString().split('T')[0]
+          date: attributes.date || new Date().toISOString().split('T')[0],
+          slug: `vol-${number}` // 生成一个基于期数的slug
         };
       });
     } catch (error) {
@@ -258,17 +284,18 @@ export class StrapiApiAdapter implements ApiAdapter {
       
       const issue = issues[0];
       const attributes = issue.attributes;
+      const number = attributes.number;
       
       return {
         id: issue.id,
-        number: attributes.number,
-        color: attributes.color || this.getColorForIssue(attributes.number),
+        number,
         title: attributes.title,
-        subtitle: attributes.subtitle || `Vol ${attributes.number}`,
+        subtitle: attributes.subtitle || `Vol ${number}`,
         items: attributes.items || ["本期暂无目录"],
         author: attributes.author || "MDT",
         icon: attributes.icon?.data?.attributes?.url || "/test.png",
-        date: attributes.date || new Date().toISOString().split('T')[0]
+        date: attributes.date || new Date().toISOString().split('T')[0],
+        slug: `vol-${number}` // 生成一个基于期数的slug
       };
     } catch (error) {
       console.error(`获取期数 ${issueNumber} 失败:`, error);
@@ -279,8 +306,33 @@ export class StrapiApiAdapter implements ApiAdapter {
   // 获取最新一期
   async getLatestIssue(): Promise<IssueContent | null> {
     try {
-      // Strapi 查询参数，按 number 字段降序排序，只获取第一条
-      const queryParams = '?populate=*&sort=number:desc&pagination[limit]=1';
+      const allIssues = await this.getAllIssues();
+      
+      if (allIssues.length > 0) {
+        const latestIssue = allIssues[0]; // 已按期数降序排序，第一个即为最新
+        latestIssue.isLatest = true; // 标记为最新
+        return latestIssue;
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('获取最新期数失败:', error);
+      throw error;
+    }
+  }
+  
+  // 获取文章详细内容
+  async getArticleContent(issueNumber: number): Promise<ArticleData> {
+    try {
+      // 获取指定期数的内容
+      const issue = await this.getIssueByNumber(issueNumber);
+      
+      if (!issue) {
+        throw new Error(`找不到期数 ${issueNumber} 的内容`);
+      }
+      
+      // 获取文章详细内容的查询参数
+      const queryParams = `?populate=content&filters[number][$eq]=${issueNumber}`;
       const response = await fetch(`${this.baseUrl}${this.endpoints.issues}${queryParams}`);
       
       if (!response.ok) {
@@ -288,49 +340,32 @@ export class StrapiApiAdapter implements ApiAdapter {
       }
       
       const data = await response.json();
-      const issues = data.data || [];
+      const articles = data.data || [];
       
-      if (issues.length === 0) {
-        return null;
+      if (articles.length === 0) {
+        throw new Error(`找不到期数 ${issueNumber} 的文章内容`);
       }
       
-      const issue = issues[0];
-      const attributes = issue.attributes;
+      const article = articles[0].attributes;
+      
+      // 如果Strapi中没有正文内容，则生成一个占位内容
+      const content = article.content || `<p>Vol ${issueNumber} 的文章内容暂未上传。</p>`;
       
       return {
-        id: issue.id,
-        number: attributes.number,
-        color: attributes.color || this.getColorForIssue(attributes.number),
-        title: attributes.title,
-        subtitle: attributes.subtitle || `Vol ${attributes.number}`,
-        items: attributes.items || ["本期暂无目录"],
-        author: attributes.author || "MDT",
-        icon: attributes.icon?.data?.attributes?.url || "/test.png",
-        date: attributes.date || new Date().toISOString().split('T')[0]
+        content,
+        createdAt: article.date || new Date().toISOString(),
+        author: article.author || issue.author || "MDT"
       };
-    } catch (error) {
-      console.error('获取最新期数失败:', error);
-      throw error;
+    } catch (error: Error | unknown) {
+      console.error(`获取期数 ${issueNumber} 的文章内容失败:`, error);
+      // 返回默认值，避免UI崩溃
+      const errorMessage = error instanceof Error ? error.message : '未知错误';
+      return {
+        content: `<p>加载文章内容时发生错误，请稍后再试。</p><p>错误信息: ${errorMessage}</p>`,
+        createdAt: new Date().toISOString(),
+        author: "MDT"
+      };
     }
-  }
-
-  // 根据期数生成一致的颜色
-  private getColorForIssue(number: number): string {
-    // 可用的颜色数组
-    const colors = [
-      "#FF9E80", // 橙红色
-      "#90CAF9", // 蓝色
-      "#81C784", // 绿色
-      "#B39DDB", // 紫色
-      "#FFCC80", // 橙色
-      "#F48FB1", // 粉色
-      "#A1887F", // 棕色
-      "#90A4AE"  // 蓝灰色
-    ];
-    
-    // 使用模运算确保颜色循环使用
-    const colorIndex = (number % colors.length);
-    return colors[colorIndex];
   }
 }
 

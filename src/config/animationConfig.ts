@@ -1,3 +1,51 @@
+/**
+ * 统一动画配置文件
+ * 
+ * 该文件合并了原有的animationConfig.ts和scrollThresholds.ts
+ * 包含所有与动画相关的配置、阈值和辅助函数
+ */
+
+// 滚动阈值配置
+export const SCROLL_THRESHOLDS = {
+  // 显示内容区域的阈值（当滚动进度超过这个值时显示内容）
+  CONTENT_SHOW: 0.03,
+  
+  // 隐藏标题文本的阈值（当滚动进度超过这个值时开始隐藏标题）
+  TITLE_HIDE: 0.03,
+  
+  // 计算标题变换的阈值（当滚动进度超过这个值时标题开始移动）
+  TITLE_TRANSFORM: 0.03,
+  
+  // 文本透明度变化的阈值（当滚动进度超过这个值时文本开始变透明）
+  TEXT_OPACITY: 0.03,
+} as const;
+
+// 缓动函数
+export const easeOutExpo = (t: number) => (t === 1 ? 1 : 1 - Math.pow(2, -10 * t));
+
+/**
+ * 根据滚动进度和阈值计算变换值
+ */
+export function calculateTransform(
+  scrollProgress: number, 
+  threshold: number, 
+  maxTransform: number,
+  easeFn = easeOutExpo
+): number {
+  return scrollProgress < threshold ? 0 : maxTransform * easeFn(scrollProgress);
+}
+
+/**
+ * 根据滚动进度和阈值计算透明度
+ */
+export function calculateOpacity(
+  scrollProgress: number, 
+  threshold: number, 
+  fadeSpeed = 3
+): number {
+  return scrollProgress < threshold ? 1 : Math.max(1 - scrollProgress * fadeSpeed, 0);
+}
+
 // 动画配置
 export const ANIMATION_CONFIG = {
   // 基础动画配置
@@ -29,7 +77,7 @@ export const ANIMATION_CONFIG = {
   // Vol数字元素配置
   volNumber: {
     base: {
-      fontSize: 150,
+      fontSize: 146,
       fontFamily: "font-newyork-large",
       heightRatio: 1.06,
     },
@@ -68,25 +116,9 @@ export const ANIMATION_CONFIG = {
   
   // 动画预设
   presets: {
-    // 标题动画
-    title: {
-      initial: { y: 0 },
-      animate: { y: "-100vh", opacity: 0 },
-      transition: { type: "linear", duration: 1 }
-    },
-    
-    // 内容卡片动画
-    contentCard: {
-      initial: { height: 300 },
-      hover: { height: 450 },
+    // 期数标题动画
+    issueHeader: {
       transition: { duration: 0.7, ease: [0.4, 0, 0.2, 1] }
-    },
-    
-    // 期数列表动画
-    issueList: {
-      initial: { opacity: 0 },
-      animate: { opacity: 1 },
-      transition: { duration: 0.5, ease: [0.4, 0, 0.2, 1] }
     },
     
     // 加载动画
@@ -94,73 +126,6 @@ export const ANIMATION_CONFIG = {
       initial: { opacity: 0 },
       animate: { opacity: 1 },
       transition: { duration: 0.3 }
-    },
-
-    // 数字元素动画
-    numberElement: {
-      initial: { opacity: 0, y: 20 },
-      animate: {
-        opacity: 1,
-        y: 0,
-        transition: {
-          duration: 0.5,
-          delay: 0.01,
-          ease: [0.4, 0, 0.2, 1]
-        }
-      },
-      exit: {
-        opacity: 0,
-        transition: {
-          duration: 0.25
-        }
-      },
-      hover: {
-        scale: 1.05,
-        opacity: 0.7,
-        transition: { 
-          duration: 0.3,
-          scale: {
-            duration: 0.3,
-            ease: [0.25, 0.1, 0.25, 1.0]
-          },
-          opacity: {
-            duration: 0.3,
-            ease: [0.25, 0.1, 0.25, 1.0]
-          }
-        }
-      }
-    },
-
-    // 内容过渡动画
-    contentTransition: {
-      fadeOut: {
-        opacity: 0,
-        transition: { duration: 0.3 }
-      },
-      fadeIn: {
-        opacity: 1,
-        transition: { duration: 0.5 }
-      }
-    },
-
-    // 滚动动画
-    scroll: {
-      smooth: {
-        duration: 0.5,
-        ease: [0.4, 0, 0.2, 1]
-      },
-      transform: {
-        duration: 0.7,
-        ease: [0.32, 0.72, 0, 1]
-      }
-    },
-
-    // 提示文本动画
-    hintText: {
-      transition: { 
-        duration: 0.5,
-        ease: [0.4, 0, 0.2, 1]
-      }
     },
 
     // 信息文本动画
@@ -186,34 +151,14 @@ export const ANIMATION_CONFIG = {
         repeat: Infinity,
         ease: "easeInOut"
       }
-    },
-
-    // 浏览按钮动画
-    browseButton: {
-      transition: { 
-        duration: 0.7, 
-        ease: [0.4, 0, 0.2, 1]
-      }
-    },
-
-    // 期数元素动画
-    issueElement: {
-      transition: { 
-        duration: 0.3,
-        ease: [0.4, 0, 0.2, 1]
-      }
-    },
+    }
   },
   
-  // 动画工具函数
+  // 动画工具函数 - 使用上方定义的共享函数
   utils: {
-    // 缓动函数
-    easeOutExpo: (t: number) => (t === 1 ? 1 : 1 - Math.pow(2, -10 * t)),
-    
-    // 计算变换值
-    calculateTransform: (scrollProgress: number, threshold: number, maxTransform: number) => {
-      return scrollProgress < threshold ? 0 : maxTransform * ANIMATION_CONFIG.utils.easeOutExpo(scrollProgress);
-    }
+    easeOutExpo,
+    calculateTransform,
+    calculateOpacity
   }
 } as const;
 

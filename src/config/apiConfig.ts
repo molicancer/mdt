@@ -21,15 +21,4 @@ export const API_CONFIG = {
       media: '/upload'
     }
   }
-};
-
-// 当前使用的 API 配置
-export const getCurrentApi = () => {
-  return API_CONFIG.type === 'wordpress' ? API_CONFIG.wordpress : API_CONFIG.strapi;
-};
-
-// 当前是否使用 WordPress
-export const isWordPress = () => API_CONFIG.type === 'wordpress';
-
-// 当前是否使用 Strapi
-export const isStrapi = () => API_CONFIG.type === 'strapi'; 
+}; 

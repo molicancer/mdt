@@ -7,28 +7,23 @@ import { motion } from "framer-motion";
 
 export const DebugPanel = () => {
   // 控制面板展开/收起状态
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(true);
   
   // 从动画状态库获取状态和方法
   const {
     isInitialStage,
+    isArticleReading,
     setInitialStage,
-    setStage2State,
-    setBrowseModeState,
+    setArticleReading,
     updateAnimationValues,
-    elementsOpacity,
-    dateOpacity,
     titleTransform,
     titleOpacity,
-    volTransform,
-    numberTransform,
-    scrollProgress
+    scrollProgress,
+    isVisible
   } = useAnimationStore();
   
   // 从UI状态库获取状态和方法
   const {
-    browseMode,
-    setBrowseMode,
     activeIssue,
     setActiveIssue
   } = useUIStore();
@@ -41,13 +36,10 @@ export const DebugPanel = () => {
     <div className="mb-4 text-xs">
       <div className="grid grid-cols-2 gap-2">
         <div>isInitialStage: <span className="font-bold">{isInitialStage ? "true" : "false"}</span></div>
-        <div>browseMode: <span className="font-bold">{browseMode ? "true" : "false"}</span></div>
-        <div>elementsOpacity: <span className="font-bold">{elementsOpacity.toFixed(2)}</span></div>
-        <div>dateOpacity: <span className="font-bold">{dateOpacity.toFixed(2)}</span></div>
+        <div>isArticleReading: <span className="font-bold">{isArticleReading ? "true" : "false"}</span></div>
+        <div>isVisible: <span className="font-bold">{isVisible ? "true" : "false"}</span></div>
         <div>titleTransform: <span className="font-bold">{titleTransform.toFixed(0)}</span></div>
         <div>titleOpacity: <span className="font-bold">{titleOpacity.toFixed(2)}</span></div>
-        <div>volTransform: <span className="font-bold">{volTransform.toFixed(0)}</span></div>
-        <div>numberTransform: <span className="font-bold">{numberTransform.toFixed(0)}</span></div>
         <div>scrollProgress: <span className="font-bold">{scrollProgress.toFixed(2)}</span></div>
         <div>activeIssue: <span className="font-bold">{activeIssue}</span></div>
       </div>
@@ -87,20 +79,17 @@ export const DebugPanel = () => {
           
           {/* 阶段控制 */}
           <div className="mb-4">
-            <h4 className="font-bold mb-2">阶段控制</h4>
+            <h4 className="font-bold mb-2">显示控制</h4>
             <div className="flex space-x-2">
               <button 
                 className={buttonClass} 
                 onClick={() => {
                   setInitialStage(true);
+                  setArticleReading(false);
                   updateAnimationValues({
                     scrollProgress: 0,
                     titleTransform: 0, 
                     titleOpacity: 1,
-                    volTransform: 0,
-                    numberTransform: 0,
-                    elementsOpacity: 0,
-                    dateOpacity: 0
                   });
                   window.scrollTo(0, 0);
                 }}
@@ -112,42 +101,35 @@ export const DebugPanel = () => {
                 className={buttonClass} 
                 onClick={() => {
                   setInitialStage(false);
-                  updateAnimationValues({
-                    elementsOpacity: 1,
-                    dateOpacity: 1
-                  });
+                  setArticleReading(false);
                 }}
               >
-                显示元素
+                预览阶段
               </button>
               
               <button 
                 className={buttonClass} 
                 onClick={() => {
-                  setStage2State();
+                  setInitialStage(false);
+                  setArticleReading(true);
                 }}
               >
-                第二阶段
+                阅读状态
               </button>
             </div>
           </div>
           
-          {/* 浏览模式控制 */}
+          {/* 可见性控制 */}
           <div className="mb-4">
-            <h4 className="font-bold mb-2">浏览模式</h4>
+            <h4 className="font-bold mb-2">可见性控制</h4>
             <div className="flex space-x-2">
               <button 
-                className={browseMode ? dangerButtonClass : successButtonClass} 
+                className={isVisible ? successButtonClass : dangerButtonClass} 
                 onClick={() => {
-                  if (browseMode) {
-                    setBrowseMode(false);
-                  } else {
-                    setBrowseMode(true);
-                    setBrowseModeState();
-                  }
+                  useAnimationStore.getState().setVisibility(!isVisible);
                 }}
               >
-                {browseMode ? "退出浏览模式" : "进入浏览模式"}
+                {isVisible ? "隐藏元素" : "显示元素"}
               </button>
             </div>
           </div>
@@ -173,14 +155,14 @@ export const DebugPanel = () => {
             <h4 className="font-bold mb-2">动画值控制</h4>
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="block text-xs mb-1">元素透明度</label>
+                <label className="block text-xs mb-1">滚动进度</label>
                 <input 
                   type="range" 
                   min="0" 
                   max="1" 
                   step="0.1" 
-                  value={elementsOpacity}
-                  onChange={(e) => updateAnimationValues({ elementsOpacity: parseFloat(e.target.value) })}
+                  value={scrollProgress}
+                  onChange={(e) => updateAnimationValues({ scrollProgress: parseFloat(e.target.value) })}
                   className="w-full"
                 />
               </div>
@@ -205,8 +187,6 @@ export const DebugPanel = () => {
                   min="-200" 
                   max="0" 
                   step="10" 
-                  value={titleTransform}
-                  onChange={(e) => updateAnimationValues({ titleTransform: parseFloat(e.target.value) })}
                   className="w-full"
                 />
               </div>
@@ -218,8 +198,6 @@ export const DebugPanel = () => {
                   min="0" 
                   max="300" 
                   step="10" 
-                  value={volTransform}
-                  onChange={(e) => updateAnimationValues({ volTransform: parseFloat(e.target.value) })}
                   className="w-full"
                 />
               </div>
@@ -232,22 +210,16 @@ export const DebugPanel = () => {
               className={dangerButtonClass} 
               onClick={() => {
                 setInitialStage(true);
-                setBrowseMode(false);
+                setArticleReading(false);
                 updateAnimationValues({
                   scrollProgress: 0,
-                  isScrolling: false,
                   titleTransform: 0,
                   titleOpacity: 1,
-                  volTransform: 0,
-                  numberTransform: 0,
-                  elementsOpacity: 0,
-                  dateOpacity: 0,
-                  dateCurrentX: 0
                 });
                 window.scrollTo(0, 0);
               }}
             >
-              完全重置
+              重置所有值
             </button>
           </div>
         </div>

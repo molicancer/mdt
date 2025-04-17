@@ -2,19 +2,31 @@
 
 import { useRef, useEffect, useState, useCallback } from "react";
 import { BlurMasks } from "@/components/home/BlurMasks";
+import { BackgroundLayer } from "@/components/home/BackgroundLayer";
 import { ContentSection } from "@/components/home/ContentSection";
 import { FooterNav } from "@/components/home/FooterNav";
 import { HeaderNav } from "@/components/home/HeaderNav";
 import { HeroTitle } from "@/components/home/HeroTitle";
 import { DebugPanel } from "@/components/debug/DebugPanel";
-import { useUpdateAnimationStore } from "@/hooks/use-update-animation-store";
 import { useAnimationStore } from "@/store/animationStore";
 import { Loader } from "@/components/ui/loader";
-import { useUIStore } from '@/store/uiStore';
-import { motion } from "framer-motion";
+import { useScrollStore } from '@/store/scrollStore';
 
 // 是否显示调试面板，生产环境下默认为false
 const SHOW_DEBUG_PANEL = process.env.NODE_ENV === 'development';
+
+// 重置动画值的默认参数
+const initialAnimationValues = {
+  scrollProgress: 0,
+  titleTransform: 0,
+  titleOpacity: 1,
+};
+
+// 滚动阈值设置
+const SCROLL_THRESHOLDS = {
+  INITIAL_TO_PREVIEW: 300, // 从初始状态到预览状态的滚动阈值
+  PREVIEW_TO_READING: 600 // 从预览状态到阅读状态的滚动阈值
+};
 
 export default function Home() {
   // 创建页面加载状态
@@ -25,120 +37,188 @@ export default function Home() {
   
   // 从animationStore获取状态和方法
   const updateAnimationValues = useAnimationStore(state => state.updateAnimationValues);
-  const setActiveIssueOffset = useAnimationStore(state => state.setActiveIssueOffset);
   const isInitialStage = useAnimationStore(state => state.isInitialStage);
   const setInitialStage = useAnimationStore(state => state.setInitialStage);
-  const setVisibility = useAnimationStore(state => state.setVisibility);
+  const isArticleReading = useAnimationStore(state => state.isArticleReading);
+  const setArticleReading = useAnimationStore(state => state.setArticleReading);
   
-  // 页面加载和刷新时进行处理
+  // 滚动状态跟踪
+  const [scrollState, setScrollState] = useState({
+    // 累积的滚动量
+    accumulatedScroll: 0,
+  });
+  
+  // 页面加载时初始化
   useEffect(() => {
     // 确保滚动条回到顶部
     window.scrollTo(0, 0);
     
     // 重置所有动画状态为初始值
-    updateAnimationValues({
-      scrollProgress: 0,
-      isScrolling: false,
-      titleTransform: 0,
-      titleOpacity: 1,
-      volTransform: 0,
-      numberTransform: 0,
-      elementsOpacity: 0,
-      dateOpacity: 0,
-      dateCurrentX: 0
+    updateAnimationValues(initialAnimationValues);
+    setArticleReading(false);
+    
+    // 重置滚动状态
+    setScrollState({
+      accumulatedScroll: 0,
     });
-    
-    // 确保可见性状态为true
-    setVisibility(true);
-    
-    // 重置期数列表垂直偏移量
-    setActiveIssueOffset(0);
     
     // 设置短暂延迟确保状态更新后再显示页面
     const timer = setTimeout(() => setIsPageLoaded(true), 300);
     
     return () => clearTimeout(timer);
-  }, []);
+  }, [updateAnimationValues, setArticleReading]);
   
-  // 当用户开始滚动或触摸滑动时退出初始阶段的函数
+  // 退出初始阶段进入预览状态
   const exitInitialStage = useCallback(() => {
     setInitialStage(false);
-    // 确保元素可见性 - setVisibility(true) 已移除
     updateAnimationValues({
-      elementsOpacity: 1,
-      dateOpacity: 1
+      scrollProgress: 1 // 设置scrollProgress为1，确保HeroTitle完全消失
     });
-  }, []);
+    setScrollState(prev => ({
+      ...prev,
+      accumulatedScroll: 0,
+    }));
+  }, [setInitialStage, updateAnimationValues]);
   
-  // 第一阶段相关：用于检测wheel事件然后退出初始阶段
+  // 重置到初始阶段
+  const resetToInitialStage = useCallback(() => {
+    setInitialStage(true);
+    setArticleReading(false);
+    updateAnimationValues(initialAnimationValues);
+    setScrollState({
+      accumulatedScroll: 0,
+    });
+  }, [setInitialStage, setArticleReading, updateAnimationValues]);
+  
+  // 进入文章阅读状态
+  const enterArticleReadingState = useCallback(() => {
+    if (!isInitialStage && !isArticleReading) {
+      setArticleReading(true);
+      setScrollState(prev => ({
+        ...prev,
+        accumulatedScroll: 0
+      }));
+    }
+  }, [isInitialStage, isArticleReading, setArticleReading]);
+  
+  // 退出文章阅读状态
+  const exitArticleReadingState = useCallback(() => {
+    if (isArticleReading) {
+      setArticleReading(false);
+      setScrollState({
+        accumulatedScroll: 0,
+      });
+    }
+  }, [isArticleReading, setArticleReading]);
+  
+  // 处理滚动事件和触摸事件
   useEffect(() => {
     if (!isPageLoaded) return;
     
     // 获取scrollLocked初始状态
-    let scrollLocked = useUIStore.getState().scrollLocked;
+    let scrollLocked = useScrollStore.getState().scrollLocked;
+    let lastScrollY = 0;
     
-    const handleWheel = (e: WheelEvent) => {
-      // 如果滚动被锁定，不处理wheel事件
+    // 动画进展状态
+    let animationProgress = isInitialStage ? 0 : 1;
+    let accumulatedDeltaY = 0;
+    
+    // 处理滚动事件
+    const handleScroll = (deltaY: number) => {
+      // 如果滚动被锁定，不处理滚动
       if (scrollLocked) return;
       
-      // 阻止默认滚动行为，禁止页面滚动导航
-      e.preventDefault();
-      
-      
-      // 向下滚动 - 触发标题移出
-      if (e.deltaY > 0 && isInitialStage) {
-        exitInitialStage();
-      } 
-      // 向上滚动且已经滚动过 - 恢复初始状态
-      else if (e.deltaY < 0 && !isInitialStage && window.scrollY <= 0) {
-        setInitialStage(true);
-        // 重置动画状态
-        updateAnimationValues({
-          titleTransform: 0,
-          titleOpacity: 1,
-          volTransform: 0,
-          numberTransform: 0,
-          elementsOpacity: 0,
-          dateOpacity: 0,
-          dateCurrentX: 0,
-          scrollProgress: 0
-        });
-      }
-    };
-    
-    const handleTouchMove = (e: TouchEvent) => {
-      // 如果滚动被锁定，不处理触摸事件
-      if (scrollLocked) return;
-      
-      // 阻止默认触摸移动行为，禁止页面滚动导航
-      e.preventDefault();
-      
-      // 如果是初始阶段，向下滑动就退出初始阶段
+      // 1. 处理初始状态 -> 预览状态的转换
       if (isInitialStage) {
-        exitInitialStage();
-      }
-      // 如果不是初始阶段，且在页面顶部，向上滑动恢复初始状态
-      else if (!isInitialStage && window.scrollY <= 0) {
-        // 检测向上滑动手势 - 简化版，实际项目中可能需要更复杂的检测
-        if (e.touches && e.touches.length > 0) {
-          setInitialStage(true);
-          // 重置动画状态
+        if (deltaY > 0) { // 向下滚动
+          accumulatedDeltaY += deltaY;
+          
+          // 计算动画进展
+          animationProgress = Math.min(1, accumulatedDeltaY / SCROLL_THRESHOLDS.INITIAL_TO_PREVIEW);
+          
+          // 更新动画值
           updateAnimationValues({
-            titleTransform: 0,
-            titleOpacity: 1,
-            volTransform: 0,
-            numberTransform: 0,
-            elementsOpacity: 0,
-            dateOpacity: 0,
-            dateCurrentX: 0,
-            scrollProgress: 0
+            scrollProgress: animationProgress,
+            titleTransform: 500 * animationProgress,
+            titleOpacity: 1 - animationProgress
           });
+          
+          // 当累积足够多的滚动量，进入预览状态
+          if (accumulatedDeltaY >= SCROLL_THRESHOLDS.INITIAL_TO_PREVIEW) {
+            exitInitialStage();
+            accumulatedDeltaY = 0;
+          }
+        }
+      } 
+      // 2. 处理预览状态 -> 阅读状态的转换
+      else if (!isArticleReading) {
+        if (deltaY > 0) { // 继续向下滚动
+          // 获取当前累积的滚动量
+          const currentAccumulatedScroll = scrollState.accumulatedScroll;
+          // 计算新的累积滚动量
+          const newAccumulatedScroll = currentAccumulatedScroll + deltaY;
+          
+          // 先检查是否应该进入阅读状态
+          if (newAccumulatedScroll >= SCROLL_THRESHOLDS.PREVIEW_TO_READING) {
+            // 先更新状态，然后在下一个渲染周期进入阅读状态
+            setScrollState({
+              accumulatedScroll: 0
+            });
+            // 在状态更新后调用enterArticleReadingState
+            setTimeout(() => {
+              enterArticleReadingState();
+            }, 0);
+          } else {
+            // 如果未达到阈值，只更新累积的滚动量
+            setScrollState({
+              accumulatedScroll: newAccumulatedScroll
+            });
+          }
+        } else if (deltaY < 0 && window.scrollY <= 0) { // 向上滚动且在页面顶部
+          resetToInitialStage();
+          accumulatedDeltaY = 0;
         }
       }
+      // 3. 处理阅读状态 -> 预览状态的转换
+      else if (isArticleReading && deltaY < 0 && window.scrollY <= 0) {
+        exitArticleReadingState();
+      }
     };
     
-    // 使用正确的zustand订阅语法
-    const unsubscribe = useUIStore.subscribe(
+    // wheel事件处理
+    const handleWheel = (e: WheelEvent) => {
+      // 如果这是初始状态到预览状态的转换，阻止默认滚动
+      if (isInitialStage || (e.deltaY < 0 && window.scrollY <= 0 && !isArticleReading)) {
+        e.preventDefault();
+      }
+      
+      handleScroll(e.deltaY);
+    };
+    
+    // 触摸事件处理
+    const handleTouchMove = (e: TouchEvent) => {
+      if (scrollLocked) return;
+      
+      const currentY = e.touches[0].clientY;
+      const deltaY = lastScrollY - currentY;
+      lastScrollY = currentY;
+      
+      // 如果这是初始状态到预览状态的转换，阻止默认滚动
+      if (isInitialStage || (deltaY < 0 && window.scrollY <= 0 && !isArticleReading)) {
+        e.preventDefault();
+      }
+      
+      handleScroll(deltaY);
+    };
+    
+    const handleTouchStart = (e: TouchEvent) => {
+      if (e.touches && e.touches.length > 0) {
+        lastScrollY = e.touches[0].clientY;
+      }
+    };
+    
+    // 使用scrollStore订阅锁定状态
+    const unsubscribe = useScrollStore.subscribe(
       (state) => {
         // 检测到滚动锁定状态变化，更新本地变量
         if (state.scrollLocked !== scrollLocked) {
@@ -147,21 +227,28 @@ export default function Home() {
       }
     );
     
-    // 添加事件监听器，设置passive为false以允许preventDefault
+    // 添加事件监听器
     window.addEventListener('wheel', handleWheel, { passive: false });
     window.addEventListener('touchmove', handleTouchMove, { passive: false });
+    window.addEventListener('touchstart', handleTouchStart, { passive: false });
     
     return () => {
       window.removeEventListener('wheel', handleWheel);
       window.removeEventListener('touchmove', handleTouchMove);
+      window.removeEventListener('touchstart', handleTouchStart);
       unsubscribe(); // 清理订阅
     };
-  }, [isInitialStage, isPageLoaded, exitInitialStage, setInitialStage, updateAnimationValues]);
-  
-  // 使用新的钩子，自动将动画值同步到Zustand
-  useUpdateAnimationStore(titleRef, {
-    smoothUpdateFactor: 0.3
-  });
+  }, [
+    isInitialStage, 
+    isArticleReading, 
+    isPageLoaded, 
+    exitInitialStage, 
+    resetToInitialStage, 
+    enterArticleReadingState, 
+    exitArticleReadingState,
+    updateAnimationValues,
+    scrollState
+  ]);
 
   // 如果页面尚未加载完成，显示加载组件
   if (!isPageLoaded) {
@@ -169,31 +256,13 @@ export default function Home() {
   }
 
   return (
-    <main className="relative min-h-screen h-screen overflow-hidden">
-      {/* 背景层 - 单独动画 */}
-      <motion.div
-        className="absolute inset-0 -z-10"
-        style={{ backgroundColor: 'var(--background)' }}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: isInitialStage ? 0 : 1 }}
-        transition={{ duration: 0.5, ease: "easeInOut" }}
-      />
-
-      {/* 顶部导航 */}
+    <main className="relative min-h-screen">
+      <BackgroundLayer isInitialStage={isInitialStage} />
       <HeaderNav />
-
-      {/* 底部提示 */}
       <FooterNav />
-            
-      {/* 模糊遮罩：z-30 */}
       <BlurMasks />
-            
       <HeroTitle ref={titleRef} />
-
-      {/* 中间内容区域 */}
       <ContentSection />
-
-      {/* 调试面板 - 只在开发环境显示 */}
       {SHOW_DEBUG_PANEL && <DebugPanel />}
     </main>
   );
