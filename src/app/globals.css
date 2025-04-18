@@ -252,3 +252,12 @@
 .dark .blur-mask-right {
   background-color: rgba(20, 20, 20, 0.7);
 }
+
+/* 背景样式 */
+.body-background {
+  background-image: url('/background.png');
+  background-position: center center;
+  background-size: auto;
+  background-repeat: repeat;
+  background-attachment: fixed;
+}

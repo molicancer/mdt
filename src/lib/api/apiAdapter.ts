@@ -4,7 +4,9 @@ import { IssueContent } from "@/types/issue";
 const API_CONFIG = {
   baseUrl: 'http://172.16.7.55:1337/api',
   endpoints: {
-    issues: '/issues'
+    issues: '/issues',
+    articles: '/articles',
+    categories: '/categories'
   }
 };
 
@@ -13,6 +15,40 @@ export interface ArticleData {
   content: string;
   createdAt: string;
   author: string;
+}
+
+// 文章详情接口（包含分类）
+export interface ArticleDetail {
+  id: number;
+  documentId: string;
+  title: string;
+  excerpt: string | null;
+  content: string;
+  slug: string | null;
+  link: string | null;
+  createdAt: string;
+  updatedAt: string;
+  publishedAt: string;
+  category?: {
+    id: number;
+    documentId: string;
+    name: string;
+    createdAt: string;
+    updatedAt: string;
+    publishedAt: string;
+    sort_order?: number;
+  } | null;
+}
+
+// 分类接口
+export interface Category {
+  id: number;
+  documentId: string;
+  name: string;
+  createdAt: string;
+  updatedAt: string;
+  publishedAt: string;
+  sort_order?: number;
 }
 
 // Strapi响应的Issue数据类型
@@ -30,10 +66,14 @@ interface StrapiIssue {
 class StrapiApiAdapter {
   private baseUrl: string;
   private issuesEndpoint: string;
+  private articlesEndpoint: string;
+  private categoriesEndpoint: string;
 
   constructor() {
     this.baseUrl = API_CONFIG.baseUrl;
     this.issuesEndpoint = API_CONFIG.endpoints.issues;
+    this.articlesEndpoint = API_CONFIG.endpoints.articles;
+    this.categoriesEndpoint = API_CONFIG.endpoints.categories;
   }
 
   // 获取所有期刊
@@ -183,6 +223,51 @@ class StrapiApiAdapter {
       };
     }
   }
+
+  // 获取所有分类
+  async getAllCategories(): Promise<Category[]> {
+    try {
+      const response = await fetch(`${this.baseUrl}${this.categoriesEndpoint}`);
+      
+      if (!response.ok) {
+        throw new Error(`API错误: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      const categories = data.data || [];
+      
+      // 按 sort_order 排序
+      return categories.sort((a: Category, b: Category) => {
+        const sortA = a.sort_order || 999;
+        const sortB = b.sort_order || 999;
+        return sortA - sortB;
+      });
+    } catch (error) {
+      console.error('获取分类列表失败:', error);
+      throw error;
+    }
+  }
+
+  // 获取文章详情（含分类信息）
+  async getArticleDetail(articleId: string): Promise<ArticleDetail | null> {
+    try {
+      const response = await fetch(`${this.baseUrl}${this.articlesEndpoint}/${articleId}?populate=*`);
+      
+      if (!response.ok) {
+        throw new Error(`API错误: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      if (!data.data) {
+        return null;
+      }
+      
+      return data.data as ArticleDetail;
+    } catch (error) {
+      console.error(`获取文章详情失败: ${articleId}`, error);
+      throw error;
+    }
+  }
 }
 
 // 创建API适配器实例
@@ -216,4 +301,19 @@ export async function getLatestIssue(): Promise<IssueContent | null> {
  */
 export async function getArticleContent(issueNumber: number): Promise<ArticleData> {
   return apiAdapter.getArticleContent(issueNumber);
+}
+
+/**
+ * 获取所有分类
+ */
+export async function getAllCategories(): Promise<Category[]> {
+  return apiAdapter.getAllCategories();
+}
+
+/**
+ * 获取文章详情（含分类信息）
+ * @param articleId 文章ID
+ */
+export async function getArticleDetail(articleId: string): Promise<ArticleDetail | null> {
+  return apiAdapter.getArticleDetail(articleId);
 } 

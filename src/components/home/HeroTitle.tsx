@@ -1,6 +1,7 @@
 import { forwardRef } from "react";
 import { motion } from "framer-motion";
 import { useAnimationStore } from "@/store/animationStore";
+import ScrollFloat from "@/blocks/TextAnimations/ScrollFloat/ScrollFloat";
 
 export const HeroTitle = forwardRef<HTMLDivElement>(
   function HeroTitle(_, ref) {
@@ -11,6 +12,7 @@ export const HeroTitle = forwardRef<HTMLDivElement>(
 
     return (
       <div className="relative flex flex-col items-center justify-center h-screen">
+        
         <div className="flex flex-col items-center z-20">
           {/* 标题部分 - 会上移和渐隐 */}
           <motion.div

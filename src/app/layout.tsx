@@ -4,6 +4,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { MagicMoveClient } from '@/components/MagicMoveClient';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -34,13 +35,6 @@ export default function RootLayout({
           geistSans.variable,
           geistMono.variable
         )}
-        style={{
-          backgroundImage: "url('/background.png')",
-          backgroundPosition: "center center",
-          backgroundSize: "auto",
-          backgroundRepeat: "repeat",
-          backgroundAttachment: "fixed"
-        }}
       >
         <ThemeProvider
           attribute="class"
@@ -49,7 +43,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <TooltipProvider>
-            {children}
+            <MagicMoveClient>{children}</MagicMoveClient>
           </TooltipProvider>
         </ThemeProvider>
       </body>

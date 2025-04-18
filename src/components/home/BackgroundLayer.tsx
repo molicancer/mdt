@@ -155,7 +155,7 @@ export const BackgroundLayer: React.FC<BackgroundLayerProps> = ({ isInitialStage
           {/* 头像 1 容器 */}
           <motion.div 
             // 容器只处理初始淡入和悬停状态，背景始终可见
-            className="absolute flex flex-col items-center z-10 bg-background cursor-pointer"
+            className="absolute flex flex-col items-center z-10 bg-background"
             style={{ 
               left: `calc(50% + ${avatar1OffsetX}px)`,
               top: `calc(50% + ${avatar1OffsetY}px)`,
@@ -191,7 +191,7 @@ export const BackgroundLayer: React.FC<BackgroundLayerProps> = ({ isInitialStage
           {/* 头像 2 容器 */}
           <motion.div 
             // 容器只处理初始淡入和悬停状态，背景始终可见
-            className="absolute flex flex-col items-center z-10 bg-background cursor-pointer"
+            className="absolute flex flex-col items-center z-10 bg-background"
             style={{ 
               left: `calc(50% + ${avatar2OffsetX}px)`,
               top: `calc(50% + ${avatar2OffsetY}px)`,
