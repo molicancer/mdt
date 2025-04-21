@@ -1,68 +1,40 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
+import { marked } from 'marked'
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
 /**
- * 检查URL路径中是否包含期数
- * @param path URL路径
- * @returns 提取出的期数，如果没找到则返回null
+ * 安全地将 Markdown 字符串转换为 HTML 字符串。
+ * @param markdown Markdown 输入字符串。
+ * @returns 转换后的 HTML 字符串，或在出错时返回错误信息。
  */
-export function extractNumberFromPath(path: string): number | null {
-  const pathParts = path.split('/');
-  
-  // 检查路径部分中是否有volXX格式
-  for (const part of pathParts) {
-    const match = part.match(/vol(\d+)/i);
-    if (match && match[1]) {
-      return parseInt(match[1], 10);
-    }
+export const markdownToHtml = (markdown: string): string => {
+  if (!markdown) {
+    return ''; // Return empty string if input is empty or null
   }
-  
-  return null;
-}
+  try {
+    // 使用 marked.parse 的同步方式
+    return marked.parse(markdown, { async: false }) as string;
+  } catch (error) {
+    console.error('Markdown 解析错误:', error);
+    // 返回包含原始 Markdown 的错误信息，以便调试
+    return `<p style="color: red;">内容解析错误</p><pre><code>${escapeHtml(markdown)}</code></pre>`;
+  }
+};
 
 /**
- * 从URL哈希中提取期数
- * @param hash URL哈希部分
- * @returns 提取出的期数，如果没找到则返回null
+ * 简单的 HTML 转义函数，防止 XSS。
+ * @param unsafe 不安全的字符串
+ * @returns 转义后的字符串
  */
-export function extractNumberFromHash(hash: string): number | null {
-  const hashMatch = hash.match(/#vol(\d+)/i);
-  if (hashMatch && hashMatch[1]) {
-    return parseInt(hashMatch[1], 10);
-  }
-  
-  return null;
-}
-
-/**
- * 从当前URL获取期数
- * 优先从路径中获取，其次从哈希中获取
- * @returns 提取出的期数，如果没找到则返回null
- */
-export function getIssueNumberFromURL(): number | null {
-  if (typeof window === 'undefined') return null;
-  
-  // 首先检查URL路径
-  const pathNumber = extractNumberFromPath(window.location.pathname);
-  if (pathNumber !== null) {
-    return pathNumber;
-  }
-  
-  // 然后检查URL哈希
-  return extractNumberFromHash(window.location.hash);
-}
-
-/**
- * 检查URL是否包含指定标记
- * @param marker 要检查的标记
- * @returns 是否包含该标记
- */
-export function hasURLMarker(marker: string): boolean {
-  if (typeof window === 'undefined') return false;
-  
-  return window.location.hash.includes(`&${marker}`);
+function escapeHtml(unsafe: string): string {
+  return unsafe
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 }

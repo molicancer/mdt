@@ -4,7 +4,6 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { MagicMoveClient } from '@/components/MagicMoveClient';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -43,7 +42,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <TooltipProvider>
-            <MagicMoveClient>{children}</MagicMoveClient>
+            {children}
           </TooltipProvider>
         </ThemeProvider>
       </body>

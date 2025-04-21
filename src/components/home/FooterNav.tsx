@@ -1,9 +1,9 @@
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { useGlobalScrollVisibility } from "@/store/animationStore";
+import { useAnimationStore } from "@/store/animationStore";
 
 export function FooterNav() {
-  const isVisible = useGlobalScrollVisibility();
+  const isVisible = useAnimationStore((state) => state.isInitialStage);
 
   return (
     <motion.footer 

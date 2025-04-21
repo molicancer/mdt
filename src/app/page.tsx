@@ -1,269 +1,186 @@
 "use client";
 
-import { useRef, useEffect, useState, useCallback } from "react";
-import { BlurMasks } from "@/components/home/BlurMasks";
-import { BackgroundLayer } from "@/components/home/BackgroundLayer";
-import { ContentSection } from "@/components/home/ContentSection";
-import { FooterNav } from "@/components/home/FooterNav";
-import { HeaderNav } from "@/components/home/HeaderNav";
-import { HeroTitle } from "@/components/home/HeroTitle";
-import { DebugPanel } from "@/components/debug/DebugPanel";
-import { useAnimationStore } from "@/store/animationStore";
-import { Loader } from "@/components/ui/loader";
-import { useScrollStore } from '@/store/scrollStore';
+import React, { useEffect, useState, useRef } from 'react';
+import Image from 'next/image';
+import { HeaderNav } from '@/components/home/HeaderNav';
+import { FooterNav } from '@/components/home/FooterNav';
+import { BlurMasks } from '@/components/home/BlurMasks';
+import { BackgroundLayer } from '@/components/home/BackgroundLayer';
+import { 
+  getLatestIssue, 
+  getIssueWithCategorizedArticles,
+} from '@/lib/api/apiAdapter';
+import { IssueContent, CategoryWithArticles } from '@/types/issue';
+import AnimatedHeroText from '@/components/home/AnimatedHeroText';
+import { markdownToHtml } from '@/lib/utils';
+import { useScrollSnapAnimation } from '@/hooks/useScrollSnapAnimation';
 
-// 是否显示调试面板，生产环境下默认为false
-const SHOW_DEBUG_PANEL = process.env.NODE_ENV === 'development';
+const Home = () => {
+  const [currentContent, setCurrentContent] = useState<IssueContent | null>(null);
+  const [isInInitialStage, setIsInInitialStage] = useState(true);
+  const [isLoadingDetails, setIsLoadingDetails] = useState(false);
+  const [categorizedArticles, setCategorizedArticles] = useState<CategoryWithArticles[]>([]);
 
-// 重置动画值的默认参数
-const initialAnimationValues = {
-  scrollProgress: 0,
-  titleTransform: 0,
-  titleOpacity: 1,
-};
+  // 创建所有需要的引用
+  const issueHeaderRef = useRef<HTMLDivElement>(null);
+  const contentContainerRef = useRef<HTMLDivElement>(null);
+  const volRef = useRef<HTMLDivElement>(null);
+  const coverRef = useRef<HTMLDivElement>(null);
+  const numberRef = useRef<HTMLDivElement>(null);
+  const heroRef = useRef<HTMLDivElement>(null);
+  const backgroundWrapperRef = useRef<HTMLDivElement>(null);
+  const articlesContainerRef = useRef<HTMLDivElement>(null);
+  const titleTextRef = useRef<HTMLDivElement>(null);
+  const subtitleRef = useRef<HTMLParagraphElement>(null);
+  const fixedBgRef = useRef<HTMLDivElement>(null);
 
-// 滚动阈值设置
-const SCROLL_THRESHOLDS = {
-  INITIAL_TO_PREVIEW: 300, // 从初始状态到预览状态的滚动阈值
-  PREVIEW_TO_READING: 600 // 从预览状态到阅读状态的滚动阈值
-};
+  // 获取最新期刊
+  useEffect(() => {
+    const fetchLatest = async () => {
+      try {
+        const latestIssue = await getLatestIssue();
+        setCurrentContent(latestIssue);
+      } catch (error) {
+        console.error("获取最新期刊失败:", error);
+      }
+    };
+    fetchLatest();
+  }, []);
 
-export default function Home() {
-  // 创建页面加载状态
-  const [isPageLoaded, setIsPageLoaded] = useState(false);
-  
-  // 创建引用
-  const titleRef = useRef<HTMLDivElement>(null);
-  
-  // 从animationStore获取状态和方法
-  const updateAnimationValues = useAnimationStore(state => state.updateAnimationValues);
-  const isInitialStage = useAnimationStore(state => state.isInitialStage);
-  const setInitialStage = useAnimationStore(state => state.setInitialStage);
-  const isArticleReading = useAnimationStore(state => state.isArticleReading);
-  const setArticleReading = useAnimationStore(state => state.setArticleReading);
-  
-  // 滚动状态跟踪
-  const [scrollState, setScrollState] = useState({
-    // 累积的滚动量
-    accumulatedScroll: 0,
+  // 获取分类文章
+  useEffect(() => {
+    if (!currentContent) return;
+    const fetchCategorizedData = async () => {
+      setIsLoadingDetails(true);
+      setCategorizedArticles([]);
+      try {
+        const data = await getIssueWithCategorizedArticles(currentContent.documentId);
+        setCategorizedArticles(data);
+      } catch (error) {
+        console.error("获取分类文章数据失败:", error);
+      } finally {
+        setIsLoadingDetails(false);
+      }
+    };
+        
+    fetchCategorizedData();
+  }, [currentContent]);
+
+  // 使用自定义hook处理滚动和动画
+  useScrollSnapAnimation({
+    refs: {
+      issueHeaderRef,
+      contentContainerRef,
+      volRef,
+      coverRef,
+      numberRef,
+      titleTextRef,
+      subtitleRef,
+      heroRef,
+      articlesContainerRef,
+      fixedBgRef,
+      backgroundWrapperRef
+    },
+    isContentLoaded: !!currentContent,
+    setIsInInitialStage
   });
-  
-  // 页面加载时初始化
-  useEffect(() => {
-    // 确保滚动条回到顶部
-    window.scrollTo(0, 0);
-    
-    // 重置所有动画状态为初始值
-    updateAnimationValues(initialAnimationValues);
-    setArticleReading(false);
-    
-    // 重置滚动状态
-    setScrollState({
-      accumulatedScroll: 0,
-    });
-    
-    // 设置短暂延迟确保状态更新后再显示页面
-    const timer = setTimeout(() => setIsPageLoaded(true), 300);
-    
-    return () => clearTimeout(timer);
-  }, [updateAnimationValues, setArticleReading]);
-  
-  // 退出初始阶段进入预览状态
-  const exitInitialStage = useCallback(() => {
-    setInitialStage(false);
-    updateAnimationValues({
-      scrollProgress: 1 // 设置scrollProgress为1，确保HeroTitle完全消失
-    });
-    setScrollState(prev => ({
-      ...prev,
-      accumulatedScroll: 0,
-    }));
-  }, [setInitialStage, updateAnimationValues]);
-  
-  // 重置到初始阶段
-  const resetToInitialStage = useCallback(() => {
-    setInitialStage(true);
-    setArticleReading(false);
-    updateAnimationValues(initialAnimationValues);
-    setScrollState({
-      accumulatedScroll: 0,
-    });
-  }, [setInitialStage, setArticleReading, updateAnimationValues]);
-  
-  // 进入文章阅读状态
-  const enterArticleReadingState = useCallback(() => {
-    if (!isInitialStage && !isArticleReading) {
-      setArticleReading(true);
-      setScrollState(prev => ({
-        ...prev,
-        accumulatedScroll: 0
-      }));
-    }
-  }, [isInitialStage, isArticleReading, setArticleReading]);
-  
-  // 退出文章阅读状态
-  const exitArticleReadingState = useCallback(() => {
-    if (isArticleReading) {
-      setArticleReading(false);
-      setScrollState({
-        accumulatedScroll: 0,
-      });
-    }
-  }, [isArticleReading, setArticleReading]);
-  
-  // 处理滚动事件和触摸事件
-  useEffect(() => {
-    if (!isPageLoaded) return;
-    
-    // 获取scrollLocked初始状态
-    let scrollLocked = useScrollStore.getState().scrollLocked;
-    let lastScrollY = 0;
-    
-    // 动画进展状态
-    let animationProgress = isInitialStage ? 0 : 1;
-    let accumulatedDeltaY = 0;
-    
-    // 处理滚动事件
-    const handleScroll = (deltaY: number) => {
-      // 如果滚动被锁定，不处理滚动
-      if (scrollLocked) return;
-      
-      // 1. 处理初始状态 -> 预览状态的转换
-      if (isInitialStage) {
-        if (deltaY > 0) { // 向下滚动
-          accumulatedDeltaY += deltaY;
-          
-          // 计算动画进展
-          animationProgress = Math.min(1, accumulatedDeltaY / SCROLL_THRESHOLDS.INITIAL_TO_PREVIEW);
-          
-          // 更新动画值
-          updateAnimationValues({
-            scrollProgress: animationProgress,
-            titleTransform: 500 * animationProgress,
-            titleOpacity: 1 - animationProgress
-          });
-          
-          // 当累积足够多的滚动量，进入预览状态
-          if (accumulatedDeltaY >= SCROLL_THRESHOLDS.INITIAL_TO_PREVIEW) {
-            exitInitialStage();
-            accumulatedDeltaY = 0;
-          }
-        }
-      } 
-      // 2. 处理预览状态 -> 阅读状态的转换
-      else if (!isArticleReading) {
-        if (deltaY > 0) { // 继续向下滚动
-          // 获取当前累积的滚动量
-          const currentAccumulatedScroll = scrollState.accumulatedScroll;
-          // 计算新的累积滚动量
-          const newAccumulatedScroll = currentAccumulatedScroll + deltaY;
-          
-          // 先检查是否应该进入阅读状态
-          if (newAccumulatedScroll >= SCROLL_THRESHOLDS.PREVIEW_TO_READING) {
-            // 先更新状态，然后在下一个渲染周期进入阅读状态
-            setScrollState({
-              accumulatedScroll: 0
-            });
-            // 在状态更新后调用enterArticleReadingState
-            setTimeout(() => {
-              enterArticleReadingState();
-            }, 0);
-          } else {
-            // 如果未达到阈值，只更新累积的滚动量
-            setScrollState({
-              accumulatedScroll: newAccumulatedScroll
-            });
-          }
-        } else if (deltaY < 0 && window.scrollY <= 0) { // 向上滚动且在页面顶部
-          resetToInitialStage();
-          accumulatedDeltaY = 0;
-        }
-      }
-      // 3. 处理阅读状态 -> 预览状态的转换
-      else if (isArticleReading && deltaY < 0 && window.scrollY <= 0) {
-        exitArticleReadingState();
-      }
-    };
-    
-    // wheel事件处理
-    const handleWheel = (e: WheelEvent) => {
-      // 如果这是初始状态到预览状态的转换，阻止默认滚动
-      if (isInitialStage || (e.deltaY < 0 && window.scrollY <= 0 && !isArticleReading)) {
-        e.preventDefault();
-      }
-      
-      handleScroll(e.deltaY);
-    };
-    
-    // 触摸事件处理
-    const handleTouchMove = (e: TouchEvent) => {
-      if (scrollLocked) return;
-      
-      const currentY = e.touches[0].clientY;
-      const deltaY = lastScrollY - currentY;
-      lastScrollY = currentY;
-      
-      // 如果这是初始状态到预览状态的转换，阻止默认滚动
-      if (isInitialStage || (deltaY < 0 && window.scrollY <= 0 && !isArticleReading)) {
-        e.preventDefault();
-      }
-      
-      handleScroll(deltaY);
-    };
-    
-    const handleTouchStart = (e: TouchEvent) => {
-      if (e.touches && e.touches.length > 0) {
-        lastScrollY = e.touches[0].clientY;
-      }
-    };
-    
-    // 使用scrollStore订阅锁定状态
-    const unsubscribe = useScrollStore.subscribe(
-      (state) => {
-        // 检测到滚动锁定状态变化，更新本地变量
-        if (state.scrollLocked !== scrollLocked) {
-          scrollLocked = state.scrollLocked;
-        }
-      }
-    );
-    
-    // 添加事件监听器
-    window.addEventListener('wheel', handleWheel, { passive: false });
-    window.addEventListener('touchmove', handleTouchMove, { passive: false });
-    window.addEventListener('touchstart', handleTouchStart, { passive: false });
-    
-    return () => {
-      window.removeEventListener('wheel', handleWheel);
-      window.removeEventListener('touchmove', handleTouchMove);
-      window.removeEventListener('touchstart', handleTouchStart);
-      unsubscribe(); // 清理订阅
-    };
-  }, [
-    isInitialStage, 
-    isArticleReading, 
-    isPageLoaded, 
-    exitInitialStage, 
-    resetToInitialStage, 
-    enterArticleReadingState, 
-    exitArticleReadingState,
-    updateAnimationValues,
-    scrollState
-  ]);
 
-  // 如果页面尚未加载完成，显示加载组件
-  if (!isPageLoaded) {
-    return <Loader />;
+  if (!currentContent) {
+    return <div className="min-h-screen flex items-center justify-center">加载中...</div>;
   }
 
   return (
-    <main className="relative min-h-screen">
-      <BackgroundLayer isInitialStage={isInitialStage} />
+    <div className="relative w-full">
+      <div ref={backgroundWrapperRef} className="fixed inset-0 body-background">
+        <BackgroundLayer />
+      </div>
+      
       <HeaderNav />
       <FooterNav />
-      <BlurMasks />
-      <HeroTitle ref={titleRef} />
-      <ContentSection />
-      {SHOW_DEBUG_PANEL && <DebugPanel />}
-    </main>
+      <div className="pointer-events-none">
+        <BlurMasks />
+      </div>
+      
+      <div ref={heroRef} className="h-screen w-full flex flex-col items-center justify-center overflow-hidden">
+        <AnimatedHeroText />
+      </div>
+
+      <div ref={contentContainerRef} className="max-w-5xl mx-auto mt-50">
+        <div ref={issueHeaderRef} className="flex items-center justify-center sticky top-10 origin-top z-100 -translate-y-1/2">
+          <div ref={volRef} className="flex-none w-3xs text-[120px] text-right font-newyork-large opacity-0">Vol</div>
+          <div ref={coverRef} className="opacity-0 -mx-4">
+            <Image src={currentContent.icon || "/test.png"} alt="cover" width={200} height={200} />
+          </div>
+          <div ref={numberRef} className="flex-none w-3xs text-[120px] text-left font-newyork-large opacity-0">{currentContent.number.toString().padStart(2, '0')}</div>
+        </div>
+
+        <p ref={subtitleRef} className="font-newyork-large text-base mb-3.5 text-center">
+          ✨ The biggest topic of Issue {currentContent.number.toString().padStart(2, '0')}
+        </p>
+        <h3 ref={titleTextRef} className="w-3xl mx-auto font-newyork-large font-semibold text-[24px] sticky top-30 z-30 text-center origin-top will-change-[font-size] transition-[font-size]">
+          {currentContent.title}
+        </h3>
+
+        <div ref={fixedBgRef} className="w-full fixed left-0 top-0 h-75 z-11 bg-background opacity-0"></div>
+
+        <div ref={articlesContainerRef} className="w-full text-foreground z-10 sticky top-75 mt-25 pb-50">
+          {isLoadingDetails ? (
+            <div className="text-center py-12">
+              <div className="animate-spin w-8 h-8 border-t-2 border-b-2 border-blue-500 rounded-full mx-auto mb-4"></div>
+              加载分类文章中...
+            </div>
+          ) : categorizedArticles.length > 0 ? (
+            <div className="space-y-12">
+              {categorizedArticles.map(category => (
+                <div key={category.id} className="mb-12">
+                  <div className="border-b border-gray-700 pb-2 mb-6">
+                    <h2 className="text-2xl font-bold font-newyork-large tracking-wider">
+                      {category.name}
+                    </h2>
+                  </div>
+                  <div className="space-y-6">
+                    {category.articles.map(article => (
+                      <div key={article.documentId} className="p-6 bg-white/5 rounded-lg hover:bg-white/10 transition-colors">
+                        <h3 className="text-xl font-medium mb-3 font-newyork-large">{article.title}</h3>
+                        {article.excerpt && (
+                          <p className="text-sm text-gray-300 mb-4 opacity-80">{article.excerpt}</p>
+                        )}
+                        {article.content && (
+                          <div 
+                            className="prose prose-sm prose-invert max-w-none mb-4"
+                            dangerouslySetInnerHTML={{ __html: markdownToHtml(article.content) }}
+                          />
+                        )}
+                        <div className="text-sm text-gray-400 flex items-center gap-2 mt-4 pt-4 border-t border-gray-800">
+                          {article.link ? (
+                            <a 
+                              href={article.link} 
+                              target="_blank" 
+                              rel="noopener noreferrer" 
+                              className="text-blue-400 hover:underline flex items-center"
+                            >
+                              <span className="mr-1">阅读原文</span>
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                              </svg>
+                            </a>
+                          ) : (
+                            <div>无外部链接</div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">本期暂无文章或加载失败。</div>
+          )}
+        </div>
+      </div>
+    </div>
   );
-}
+};
+
+export default Home;
