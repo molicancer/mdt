@@ -1,0 +1,30 @@
+{
+  "header": {
+    "library": "过往期刊",
+    "subscribe": "联系我们"
+  },
+  "home": {
+    "biggestTopic": "✨ 第{issue_number}期最大的话题",
+    "loadingText": "加载中...",
+    "noArticles": "本期暂无文章或加载失败",
+    "readOriginal": "阅读原文",
+    "noLink": "无外部链接",
+    "heroTitle": {
+      "design": "设计",
+      "inspiration": "前沿集录"
+    },
+    "heroSubtitle": {
+      "share": "分享最新的设计和人工智能咨询",
+      "weekly": "「每周通讯」",
+      "updated": "每周一早晨更新一次"
+    },
+    "swipeDown": "向下滑动浏览每周新闻"
+  },
+  "footer": {
+    "watchPrevious": "查看上一期",
+    "watchNext": "查看下一期",
+    "established": "已经成立3年",
+    "forDesigners": "为超过3000名设计师和设计爱好者服务",
+    "accumulation": "累计分享825条设计信息"
+  }
+} 

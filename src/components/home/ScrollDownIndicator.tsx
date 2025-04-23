@@ -1,8 +1,12 @@
+'use client';
+
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { useAnimationStore } from "@/store/animationStore";
+import { useI18n } from "@/i18n";
 
-export function FooterNav() {
+export function ScrollDownIndicator() {
+  const { t } = useI18n();
   const isVisible = useAnimationStore((state) => state.isInitialStage);
 
   return (
@@ -37,7 +41,7 @@ export function FooterNav() {
         />
       </motion.div>
       <p className="text-sm text-[#545454]">
-        Swipe down to browse weekly news
+        {t('home.swipeDown')}
       </p>
     </motion.footer>
   );

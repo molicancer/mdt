@@ -10,6 +10,17 @@ export interface IssueContent {
   date: string;        // 发布日期
   isLatest?: boolean;  // 是否是最新一期，仅在getLatestIssue返回时设置
   documentId: string;  // Strapi文档ID，用于API请求
+  description?: string; // 添加description可选字段
+  topics?: Topic[];    // 主题列表
+}
+
+/**
+ * 主题数据接口
+ */
+export interface Topic {
+  id: number;        // 主题ID
+  documentId: string; // 文档ID
+  title: string;     // 主题标题
 }
 
 // 代表从 Issue API 返回的文章基本信息

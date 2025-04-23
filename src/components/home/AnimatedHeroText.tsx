@@ -3,6 +3,7 @@
 import React, { useRef, useEffect } from 'react';
 import { gsap } from 'gsap';
 import { motion } from 'framer-motion';
+import { useI18n } from '@/i18n';
 
 // 辅助函数：分割文本并为字符添加特定类名
 const splitTextWithClass = (text: string, className: string): React.ReactNode[] => {
@@ -14,6 +15,7 @@ const splitTextWithClass = (text: string, className: string): React.ReactNode[] 
 };
 
 const AnimatedHeroText = () => {
+  const { t, locale } = useI18n();
   const animationContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -71,7 +73,10 @@ const AnimatedHeroText = () => {
       tl.kill();
     };
 
-  }, []);
+  }, [locale]); // 添加locale作为依赖，当语言改变时重新触发动画
+
+  const designText = t('home.heroTitle.design');
+  const inspirationText = t('home.heroTitle.inspiration');
 
   return (
     // 容器负责居中
@@ -81,9 +86,9 @@ const AnimatedHeroText = () => {
         ref={animationContainerRef}
         className="font-newyork-large text-center relative"
       >
-        <span className="text-[118px]/[110px]">{splitTextWithClass("Design", "char-anim")}</span>
-        <span className="char-anim text-[64px] text-zinc-300 absolute ml-3 -mt-2">&</span>
-        <span className="text-[118px]/[110px] block">{splitTextWithClass("Inspiration", "char-anim")}</span>
+        <span className="2xl:text-[160px] xl:text-[110px] lg:text-[80px] text-[60px] leading-none">{splitTextWithClass(designText, "char-anim")}</span>
+        <span className="2xl:text-[85px] xl:text-[57px] lg:text-[42px] text-[32px] leading-none char-anim text-zinc-300 absolute ml-3 -mt-2">&</span>
+        <span className="2xl:text-[160px] xl:text-[110px] lg:text-[80px] text-[60px] leading-none block">{splitTextWithClass(inspirationText, "char-anim")}</span>
       </div>
 
       {/* 副标题容器 - Framer Motion控制动画 */}
@@ -105,10 +110,11 @@ const AnimatedHeroText = () => {
           ease: "easeInOut",
           delay: 0.6 // Framer Motion自带的延迟
         }}
+        key={locale} // 添加key，确保语言切换时动画重新触发
       >
         <p className="text-base text-[#545454] text-center relative">
-          Share the latest design and artificial intelligence consulting<span className="text-black">「 weekly news 」</span><br />
-          Updated once a Monday morning
+          {t('home.heroSubtitle.share')}<span className="text-black">{t('home.heroSubtitle.weekly')}</span><br />
+          {t('home.heroSubtitle.updated')}
         </p>
       </motion.div>
     </div>

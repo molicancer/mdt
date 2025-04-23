@@ -15,17 +15,17 @@ function useTypewriter(text: string, speed = 50, isHovering: boolean) {
       let i = 0;
       setDisplayedText("");
       if (text && text.length > 0) {
-        intervalId = setInterval(() => {
-          if (i < text.length) {
-            setDisplayedText((prev) => prev + text.charAt(i));
-            i++;
-          } else {
+      intervalId = setInterval(() => {
+        if (i < text.length) {
+          setDisplayedText((prev) => prev + text.charAt(i));
+          i++;
+        } else {
             if (intervalId) clearInterval(intervalId);
-          }
-        }, speed);
+        }
+      }, speed);
       }
     } else {
-      setDisplayedText("");
+      setDisplayedText(""); 
       if (intervalId) clearInterval(intervalId);
     }
 
@@ -132,17 +132,17 @@ export const BackgroundLayer: React.FC<BackgroundLayerProps> = React.memo(({
       schedulePulse(nextPulser);
     }
     return () => {
-       if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
     }
   }, [controls1, controls2, isHovering1, isHovering2, nextPulser]);
 
   // Memoized styles
   const avatar1Style = useMemo(() => ({
-    left: `calc(50% + ${avatar1OffsetX}px)`,
-    top: `calc(50% + ${avatar1OffsetY}px)`,
-    transform: 'translate(-50%, -50%)',
-    width: `${GRID_CELL_WIDTH}px`,
-    height: `${GRID_CELL_HEIGHT}px`
+              left: `calc(50% + ${avatar1OffsetX}px)`,
+              top: `calc(50% + ${avatar1OffsetY}px)`,
+              transform: 'translate(-50%, -50%)',
+              width: `${GRID_CELL_WIDTH}px`,
+              height: `${GRID_CELL_HEIGHT}px` 
   }), [avatar1OffsetX, avatar1OffsetY]);
 
   const avatar2Style = useMemo(() => ({
@@ -163,45 +163,45 @@ export const BackgroundLayer: React.FC<BackgroundLayerProps> = React.memo(({
       <motion.div
         className="absolute flex flex-col items-center z-10"
         style={avatar1Style}
-        onHoverStart={() => setIsHovering1(true)}
-        onHoverEnd={() => setIsHovering1(false)}
-      >
+            onHoverStart={() => setIsHovering1(true)}
+            onHoverEnd={() => setIsHovering1(false)}
+          >
         {/* Image pulse/hover animation */}
-        <motion.div
+            <motion.div
           className="w-full h-full relative"
           variants={imageVariants}
           initial="resting"
           animate={controls1}
-        >
+            >
           <Image src="/img/avatar-man.png" alt="Avatar 1" fill className="rounded-full object-cover" />
-        </motion.div>
+            </motion.div>
         {/* Typewriter text */}
         <p className="absolute left-0 right-0 text-base font-newyork-large font-medium text-center pointer-events-none" style={textStyle}>
-          {displayedText1}
-        </p>
-      </motion.div>
+              {displayedText1} 
+            </p>
+          </motion.div>
 
       {/* Avatar 2 Container */}
-      <motion.div
+          <motion.div 
         className="absolute flex flex-col items-center z-10"
         style={avatar2Style}
-        onHoverStart={() => setIsHovering2(true)}
-        onHoverEnd={() => setIsHovering2(false)}
-      >
+            onHoverStart={() => setIsHovering2(true)}
+            onHoverEnd={() => setIsHovering2(false)}
+          >
         {/* Image pulse/hover animation */}
-        <motion.div
+            <motion.div
           className="w-full h-full relative"
           variants={imageVariants}
           initial="resting"
           animate={controls2}
-        >
+            >
           <Image src="/img/avatar-woman.png" alt="Avatar 2" fill className="rounded-full object-cover" />
-        </motion.div>
+            </motion.div>
         {/* Typewriter text */}
         <p className="absolute left-0 right-0 text-base font-newyork-large font-medium text-center pointer-events-none" style={textStyle}>
-          {displayedText2}
-        </p>
-      </motion.div>
+              {displayedText2}
+            </p>
+          </motion.div>
     </motion.div>
   );
 });

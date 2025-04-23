@@ -1,0 +1,30 @@
+{
+  "header": {
+    "library": "Library",
+    "subscribe": "Subscribe"
+  },
+  "home": {
+    "biggestTopic": "✨ The biggest topic of Issue {issue_number}",
+    "loadingText": "Loading...",
+    "noArticles": "No articles available or failed to load",
+    "readOriginal": "Read Original",
+    "noLink": "No external link",
+    "heroTitle": {
+      "design": "Design",
+      "inspiration": "Inspiration"
+    },
+    "heroSubtitle": {
+      "share": "Share the latest design and artificial intelligence consulting",
+      "weekly": "「 weekly news 」",
+      "updated": "Updated once a Monday morning"
+    },
+    "swipeDown": "Swipe down to browse weekly news"
+  },
+  "footer": {
+    "watchPrevious": "Watch the Vol.",
+    "watchNext": "Watch the Vol.",
+    "established": "Established for 3 years",
+    "forDesigners": "For over 3000 designers and design enthusiasts",
+    "accumulation": "Accumulated 825 design information shared"
+  }
+} 

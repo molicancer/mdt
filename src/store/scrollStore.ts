@@ -7,7 +7,7 @@ interface ScrollState {
 }
 
 // 创建滚动状态存储
-export const useScrollStore = create<ScrollState>((set, get) => ({
+export const useScrollStore = create<ScrollState>((set) => ({
   // 初始状态
   scrollLocked: false, // 滚动锁定状态默认为false
   

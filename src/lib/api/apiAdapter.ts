@@ -15,7 +15,6 @@ export interface ArticleDetail {
   id: number;
   documentId: string;
   title: string;
-  excerpt: string | null;
   content: string;
   slug: string | null;
   link: string | null;
@@ -42,6 +41,25 @@ export interface Category {
   updatedAt: string;
   publishedAt: string;
   sort_order?: number;
+}
+
+// 在顶部添加新的接口定义
+interface StrapiIssueResponse {
+  id: number;
+  issue_number: number;
+  title: string;
+  description?: string;
+  documentId: string;
+  publishedAt?: string;
+  cover_image?: {
+    url?: string;
+  };
+}
+
+interface StrapiTopicResponse {
+  id: number;
+  documentId: string;
+  title: string;
 }
 
 // Helper function to organize articles by category (moved from page component)
@@ -117,7 +135,7 @@ class StrapiApiAdapter {
       // Derive the Strapi server root URL from the API base URL
       const serverRoot = API_CONFIG.baseUrl.replace('/api', '');
 
-      return issues.map((issue: any) => {
+      return issues.map((issue: StrapiIssueResponse) => {
         // Safely access nested cover_image url
         const relativeIconUrl = issue.cover_image?.url;
         let absoluteIconUrl = '/default-icon.png'; // Default icon
@@ -149,6 +167,7 @@ class StrapiApiAdapter {
   // 获取最新一期
   async getLatestIssue(): Promise<IssueContent | null> {
     try {
+      // 方案一：先尝试获取一般的期刊数据
       const allIssues = await this.getAllIssues();
       
       if (allIssues.length === 0) {
@@ -157,6 +176,27 @@ class StrapiApiAdapter {
       
       const latestIssue = allIssues[0]; // 已按期数降序排序，第一个即为最新
       latestIssue.isLatest = true;
+      
+      try {
+        // 方案二：单独获取 topics 数据
+        const topicsResponse = await fetch(`${this.baseUrl}${this.issuesEndpoint}/${latestIssue.documentId}?populate=topics`);
+        
+        if (topicsResponse.ok) {
+          const topicsData = await topicsResponse.json();
+          if (topicsData.data && topicsData.data.topics) {
+            // 处理 topics 数据
+            latestIssue.topics = topicsData.data.topics.map((topic: StrapiTopicResponse) => ({
+              id: topic.id,
+              documentId: topic.documentId,
+              title: topic.title
+            }));
+          }
+        }
+      } catch (topicsError) {
+        console.error('获取主题数据失败:', topicsError);
+        // 忽略错误，继续返回没有 topics 的 latestIssue
+      }
+      
       return latestIssue;
     } catch (error) {
       console.error('获取最新期数失败:', error);
@@ -253,6 +293,47 @@ class StrapiApiAdapter {
       throw error; // Re-throw error to be handled by the caller
     }
   }
+
+  // 根据期号获取期刊
+  async getIssueByNumber(issueNumber: number): Promise<IssueContent | null> {
+    try {
+      // 获取所有期刊
+      const allIssues = await this.getAllIssues();
+      
+      // 查找指定期号的期刊
+      const targetIssue = allIssues.find(issue => issue.number === issueNumber);
+      
+      if (!targetIssue) {
+        console.log(`[API Adapter] 未找到期号为 ${issueNumber} 的期刊`);
+        return null;
+      }
+      
+      try {
+        // 获取 topics 数据
+        const topicsResponse = await fetch(`${this.baseUrl}${this.issuesEndpoint}/${targetIssue.documentId}?populate=topics`);
+        
+        if (topicsResponse.ok) {
+          const topicsData = await topicsResponse.json();
+          if (topicsData.data && topicsData.data.topics) {
+            // 处理 topics 数据
+            targetIssue.topics = topicsData.data.topics.map((topic: StrapiTopicResponse) => ({
+              id: topic.id,
+              documentId: topic.documentId,
+              title: topic.title
+            }));
+          }
+        }
+      } catch (topicsError) {
+        console.error('获取主题数据失败:', topicsError);
+        // 忽略错误，继续返回没有 topics 的期刊
+      }
+      
+      return targetIssue;
+    } catch (error) {
+      console.error(`获取期号为 ${issueNumber} 的期刊失败:`, error);
+      throw error;
+    }
+  }
 }
 
 // 创建API适配器实例
@@ -294,4 +375,12 @@ export async function getArticleDetail(articleId: string): Promise<ArticleDetail
  */
 export async function getIssueWithCategorizedArticles(issueDocumentId: string): Promise<CategoryWithArticles[]> {
   return apiAdapter.getIssueWithCategorizedArticles(issueDocumentId);
+}
+
+/**
+ * 根据期号获取期刊
+ * @param issueNumber 期号
+ */
+export async function getIssueByNumber(issueNumber: number): Promise<IssueContent | null> {
+  return apiAdapter.getIssueByNumber(issueNumber);
 } 
