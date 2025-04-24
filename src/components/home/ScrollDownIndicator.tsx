@@ -10,8 +10,8 @@ export function ScrollDownIndicator() {
   const isVisible = useAnimationStore((state) => state.isInitialStage);
 
   return (
-    <motion.footer 
-      className="fixed bottom-0 w-full z-31 mb-15 flex flex-col gap-2 items-center pointer-events-none"
+    <motion.div 
+      className="fixed bottom-0 w-full z-31 mb-15 mx-auto flex flex-col gap-2 items-center pointer-events-none"
       initial={{ opacity: 1, y: 0 }}
       animate={{ 
         opacity: isVisible ? 1 : 0,
@@ -43,6 +43,6 @@ export function ScrollDownIndicator() {
       <p className="text-sm text-[#545454]">
         {t('home.swipeDown')}
       </p>
-    </motion.footer>
+    </motion.div>
   );
 }

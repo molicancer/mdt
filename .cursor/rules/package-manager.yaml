@@ -1,0 +1,8 @@
+name: 强制使用bun包管理器
+description: 确保项目中只使用bun包管理器，禁止使用npm、yarn、pnpm
+message: 请使用bun而不是${match}，例如：bun install
+
+triggers:
+  - regex: (npm|yarn|pnpm)
+    files: [".sh", ".md", ".json", ".js", ".jsx", ".ts", ".tsx"]
+    excludeFiles: ["node_modules/**"] 

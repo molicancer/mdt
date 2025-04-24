@@ -11,6 +11,12 @@ const nextConfig: NextConfig = {
         port: '1337',
         pathname: '/uploads/**',
       },
+      {
+        protocol: 'http',
+        hostname: '172.16.7.55',
+        port: '1337',
+        pathname: '/uploads/**',
+      },
     ],
     formats: ['image/avif', 'image/webp'],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048],
@@ -23,6 +29,19 @@ const nextConfig: NextConfig = {
   experimental: {
     optimizeCss: true,
     scrollRestoration: true,
+  },
+  // 添加API代理，解决跨域问题
+  async rewrites() {
+    return [
+      {
+        source: '/strapi-uploads/:path*',
+        destination: 'http://172.16.7.55:1337/uploads/:path*',
+      },
+      {
+        source: '/strapi-images/:path*',
+        destination: 'http://172.16.7.55:1337/images/:path*',
+      },
+    ];
   },
 };
 

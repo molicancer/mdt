@@ -1,0 +1,9 @@
+name: 推荐使用中文注释
+description: 推荐在代码中使用中文注释，以提高可读性
+message: 推荐使用中文注释来解释复杂的逻辑
+
+triggers:
+  - regex: (\/\/\s*[A-Za-z]|\/\*\s*[A-Za-z])
+    files: [".js", ".jsx", ".ts", ".tsx"]
+    excludeFiles: ["node_modules/**"]
+    level: suggestion 

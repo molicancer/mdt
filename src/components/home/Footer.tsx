@@ -66,37 +66,46 @@ export const Footer = ({ onSwitchIssue, currentIssueNumber }: FooterProps) => {
     <footer className="max-w-5xl mx-auto relative pt-18 pb-40">
       {/* 顶部版期入口按钮 */}
       <div className="mx-auto px-4 flex justify-between">
-        {!isFirstIssue && prevIssueNumber ? (
-          <button 
-            className="group relative cursor-pointer"
-            onClick={() => handleSwitchIssue(prevIssueNumber)}
-          >
-            <div className="flex items-center justify-center absolute left-0 w-10 h-10 rounded-full bg-[#FFF8E7] group-hover:bg-[#FFF0D0] transition-colors">
-              <Image src="/icon/hand-point-left.svg" alt="Previous" width={20} height={20} />
-            </div>
-            <span className="flex items-center justify-center rounded-full h-8 px-10 pr-4 my-1 text-sm bg-[#FFF8E7] group-hover:bg-[#FFF0D0] transition-colors">
-              {`${t('footer.watchPrevious')}${prevIssueNumber}`}
-            </span>
-          </button>
-        ) : (
-          null
-        )}
+        {/* 上一期按钮，没有时显示空div保持布局 */}
+        <div className="flex-1">
+          {!isFirstIssue && prevIssueNumber ? (
+            <button 
+              className="group relative cursor-pointer"
+              onClick={() => handleSwitchIssue(prevIssueNumber)}
+            >
+              <div className="flex items-center justify-center absolute left-0 w-10 h-10 rounded-full bg-[#FFF8E7] group-hover:bg-[#FFF0D0] transition-colors">
+                <Image src="/icon/hand-point-left.svg" alt="Previous" width={20} height={20} />
+              </div>
+              <span className="flex items-center justify-center rounded-full h-8 px-10 pr-4 my-1 text-sm bg-[#FFF8E7] group-hover:bg-[#FFF0D0] transition-colors">
+                {`${t('footer.watchPrevious')}${prevIssueNumber}`}
+              </span>
+            </button>
+          ) : (
+            <div className="h-10"></div>
+          )}
+        </div>
         
-        {!isLastIssue && nextIssueNumber ? (
-          <button 
-            className="group relative cursor-pointer"
-            onClick={() => handleSwitchIssue(nextIssueNumber)}
-          >
-            <div className="flex items-center justify-center absolute right-0 w-10 h-10 rounded-full bg-[#FFF8E7] group-hover:bg-[#FFF0D0] transition-colors">
-              <Image src="/icon/hand-point-right.svg" alt="Next" width={20} height={20} />
-            </div>
-            <span className="flex items-center justify-center rounded-full h-8 px-4 pr-10 my-1 text-sm bg-[#FFF8E7] group-hover:bg-[#FFF0D0] transition-colors">
-              {`${t('footer.watchNext')}${nextIssueNumber}`}
-            </span>
-          </button>
-        ) : (
-          null
-        )}
+        {/* 中间空间 */}
+        <div className="flex-1"></div>
+        
+        {/* 下一期按钮 */}
+        <div className="flex-1 flex justify-end">
+          {!isLastIssue && nextIssueNumber ? (
+            <button 
+              className="group relative cursor-pointer"
+              onClick={() => handleSwitchIssue(nextIssueNumber)}
+            >
+              <div className="flex items-center justify-center absolute right-0 w-10 h-10 rounded-full bg-[#FFF8E7] group-hover:bg-[#FFF0D0] transition-colors">
+                <Image src="/icon/hand-point-right.svg" alt="Next" width={20} height={20} />
+              </div>
+              <span className="flex items-center justify-center rounded-full h-8 px-4 pr-10 my-1 text-sm bg-[#FFF8E7] group-hover:bg-[#FFF0D0] transition-colors">
+                {`${t('footer.watchNext')}${nextIssueNumber}`}
+              </span>
+            </button>
+          ) : (
+            <div className="h-10"></div>
+          )}
+        </div>
       </div>
       
       <div className="mx-auto px-4 flex flex-row justify-between mt-12 pt-12 border-t border-dashed">

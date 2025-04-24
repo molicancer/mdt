@@ -1,0 +1,8 @@
+name: 强制通过Lint检查
+description: 确保提交的代码通过bun run lint检查，无任何问题
+message: 请确保代码通过bun run lint检查，修复所有的lint问题
+
+triggers:
+  - preCommit:
+      command: bun run lint
+      failOnStderr: true 

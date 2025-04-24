@@ -1,0 +1,9 @@
+name: Tailwind类名顺序规范
+description: 确保Tailwind类名按照布局、尺寸、间距、颜色等逻辑顺序排列
+message: 推荐按照布局(flex, grid) -> 尺寸(w, h) -> 间距(p, m) -> 颜色(bg, text) -> 其他的顺序排列Tailwind类名
+
+triggers:
+  - regex: className="([^"]*(?:bg|text)[^"]*(?:flex|grid|w-|h-)[^"]*)"
+    files: [".jsx", ".tsx"]
+    excludeFiles: ["node_modules/**"]
+    level: suggestion 
