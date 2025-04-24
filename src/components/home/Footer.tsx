@@ -65,7 +65,7 @@ export const Footer = ({ onSwitchIssue, currentIssueNumber }: FooterProps) => {
   return (
     <footer className="max-w-5xl mx-auto relative pt-18 pb-40">
       {/* 顶部版期入口按钮 */}
-      <div className="mx-auto px-4 flex justify-between">
+      <div className="mx-auto flex justify-between">
         {/* 上一期按钮，没有时显示空div保持布局 */}
         <div className="flex-1">
           {!isFirstIssue && prevIssueNumber ? (
@@ -108,7 +108,7 @@ export const Footer = ({ onSwitchIssue, currentIssueNumber }: FooterProps) => {
         </div>
       </div>
       
-      <div className="mx-auto px-4 flex flex-row justify-between mt-12 pt-12 border-t border-dashed">
+      <div className="mx-auto flex flex-row justify-between mt-12 pt-12 border-t border-dashed">
         {/* 左侧信息 */}
         <div>
           <div className="text-base mb-16 space-y-3">

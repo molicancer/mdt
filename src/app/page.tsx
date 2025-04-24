@@ -26,6 +26,7 @@ const Home = () => {
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
   const [categorizedArticles, setCategorizedArticles] = useState<CategoryWithArticles[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [showScrollIndicator, setShowScrollIndicator] = useState(true);
 
   // 创建所有需要的引用
   const issueHeaderRef = useRef<HTMLDivElement>(null);
@@ -96,6 +97,31 @@ const Home = () => {
     setIsInInitialStage
   });
 
+  // 监听滚动事件，确定是否显示滚动提示
+  useEffect(() => {
+    const handleScroll = () => {
+      if (articlesContainerRef.current) {
+        const rect = articlesContainerRef.current.getBoundingClientRect();
+        const screenMiddle = window.innerHeight / 2;
+        
+        // 当文章区域顶部在屏幕中间以上时，隐藏滚动指示器
+        if (rect.top < screenMiddle) {
+          setShowScrollIndicator(false);
+        } else {
+          setShowScrollIndicator(true);
+        }
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    // 初始执行一次确定初始状态
+    handleScroll();
+    
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
+
   // 处理切换期刊
   const handleSwitchIssue = async (issueNumber: number) => {
     try {
@@ -150,7 +176,7 @@ const Home = () => {
       </div>
       
       <Header />
-      <ScrollDownIndicator />
+      {showScrollIndicator && <ScrollDownIndicator />}
       <div ref={blurMasksRef} className="pointer-events-none">
         <BlurMasks />
       </div>

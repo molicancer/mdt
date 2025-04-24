@@ -261,3 +261,85 @@
   background-repeat: repeat;
   background-attachment: fixed;
 }
+
+/* 更新Embla Carousel Styles */
+.embla {
+  --slide-spacing: 1rem;
+  --slide-size: 100%;
+  --slide-height: 100vh;
+  position: relative;
+  width: 100%;
+  height: 100vh;
+}
+
+.embla__viewport {
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+}
+
+.embla__container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  backface-visibility: hidden;
+}
+
+.embla[data-axis='x'] .embla__container {
+  flex-direction: row;
+}
+
+.embla__slide {
+  flex: 0 0 100%;
+  min-width: 0;
+  position: relative;
+}
+
+.embla__slide__inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.embla__dots {
+  display: flex;
+  flex-direction: column;
+  position: absolute;
+  right: 1.2rem;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 40;
+}
+
+.embla[data-axis='x'] .embla__dots {
+  flex-direction: row;
+  bottom: 1.2rem;
+  top: auto;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.embla__dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  margin: 0.25rem;
+  cursor: pointer;
+  background-color: var(--color-foreground);
+  opacity: 0.3;
+  transition: all 0.3s ease;
+}
+
+.embla__dot--selected {
+  opacity: 1;
+  transform: scale(1.5);
+}
+
+/* 禁用页面滚动，让Embla手势控制 */
+html.embla-carousel-active,
+body.embla-carousel-active {
+  overflow: hidden;
+  touch-action: none;
+  -ms-touch-action: none;
+}
