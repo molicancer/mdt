@@ -38,7 +38,6 @@ export function VerticalCarousel<T extends CardItem>({
   const lastWheelTime = useRef(0);
   const isTouchInProgress = useRef(false);
   const deltaAccumulator = useRef(0);
-  const lastScrollTime = useRef(0);
   const touchStartY = useRef<number | null>(null);
   const touchEndY = useRef<number | null>(null);
   

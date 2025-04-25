@@ -1,3 +1,59 @@
+# MDT 项目
+
+## 环境变量配置
+
+本项目使用环境变量来配置不同环境的设置。以下是环境变量的设置说明：
+
+### 环境变量文件
+
+- `.env.example`: 示例环境变量文件，包含所有需要的变量
+- `.env.development`: 开发环境配置
+- `.env.production`: 生产环境配置
+- `.env.test`: 测试环境配置
+
+### 配置步骤
+
+1. 复制示例文件创建你的环境配置：
+
+```bash
+cp .env.example .env.local
+```
+
+2. 根据你的需求编辑 `.env.local` 文件
+
+### 主要环境变量
+
+- `NEXT_PUBLIC_STRAPI_HOST`: Strapi CMS 服务器的主机地址
+- `NEXT_PUBLIC_STRAPI_PORT`: Strapi CMS 服务器的端口
+- `NEXT_PUBLIC_STRAPI_API_URL`: Strapi API 的完整 URL
+- `NEXT_PUBLIC_STRAPI_SERVER_ROOT`: Strapi 服务器的根 URL
+- `NEXT_PUBLIC_STRAPI_BACKUP_HOST`: 备用 Strapi 服务器的主机地址
+- `NEXT_PUBLIC_STRAPI_BACKUP_PORT`: 备用 Strapi 服务器的端口
+
+## 运行项目
+
+确保你已经设置好环境变量后，运行以下命令：
+
+```bash
+# 安装依赖
+bun install
+
+# 开发模式运行
+bun run dev
+
+# 构建项目
+bun run build
+
+# 启动生产服务器
+bun run start
+```
+
+## 部署说明
+
+1. 确保在部署环境中设置了正确的环境变量
+2. 根据环境选择合适的 `.env` 文件
+3. 执行构建和启动命令
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started

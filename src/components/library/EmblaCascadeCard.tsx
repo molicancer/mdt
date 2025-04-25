@@ -2,19 +2,14 @@
 
 import { motion, useReducedMotion } from "framer-motion";
 import Image from "next/image";
-import { useRef, useEffect } from "react";
+import { useRef } from "react";
 import { Topic } from "@/types/issue";
 import { useI18n } from "@/i18n";
 
 export interface EmblaCascadeCardProps {
-  id: number | string;
   title: string;
-  content: string;
-  color: string;
   inView: boolean;
-  onClick?: () => void;
   imageUrl?: string;
-  subtitle?: string;
   date?: string;
   number?: number;
   topics?: Topic[];
@@ -22,24 +17,16 @@ export interface EmblaCascadeCardProps {
 }
 
 export function EmblaCascadeCard({
-  id,
   title,
-  content,
-  color,
   inView,
-  onClick,
   imageUrl,
-  subtitle,
   date,
   number,
   topics,
   position
 }: EmblaCascadeCardProps) {
   const prefersReducedMotion = useReducedMotion();
-  const cardRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLDivElement>(null);
-  const titleRef = useRef<HTMLHeadingElement>(null);
-  const contentRef = useRef<HTMLParagraphElement>(null);
   const { locale } = useI18n();
   
   const issueNumber = number !== undefined ? number : 
@@ -49,8 +36,7 @@ export function EmblaCascadeCard({
   const formatDate = (dateString?: string) => {
     if (!dateString) return '';
     
-    try {
-      const date = new Date(dateString);
+    const date = new Date(dateString);
       
       // 中文日期格式
       if (locale === 'zh') {
@@ -68,10 +54,6 @@ export function EmblaCascadeCard({
         };
         return date.toLocaleDateString('en-US', options);
       }
-    } catch (e) {
-      // 如果日期无效，直接返回原始字符串
-      return dateString;
-    }
   };
   
   // 样式计算

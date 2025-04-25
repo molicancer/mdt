@@ -4,8 +4,8 @@ import { marked } from 'marked'
 
 // Strapi 环境变量配置
 export const STRAPI_CONFIG = {
-  BASE_URL: 'http://172.16.7.55:1337/api',
-  SERVER_ROOT: 'http://172.16.7.55:1337',
+  BASE_URL: process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://localhost:1337/api',
+  SERVER_ROOT: process.env.NEXT_PUBLIC_STRAPI_SERVER_ROOT || 'http://localhost:1337',
   endpoints: {
     issues: '/issues',
     articles: '/articles',

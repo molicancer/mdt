@@ -13,8 +13,9 @@ export default function LibraryPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const pageRef = useRef<HTMLDivElement>(null);
+  // 虽然在UI中未直接使用，但在数据流逻辑中需要保持状态以便正确加载每个期刊的详细内容
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [activeIssue, setActiveIssue] = useState<IssueContent | null>(null);
-  const [activeIndex, setActiveIndex] = useState(0);
 
   // 获取期刊数据
   useEffect(() => {
@@ -44,8 +45,6 @@ export default function LibraryPage() {
 
   // 处理索引变化
   const handleIndexChange = async (index: number) => {
-    setActiveIndex(index);
-    
     if (issues[index]) {
       // 如果当前期刊没有详细信息，则获取
       if (!issues[index].topics) {

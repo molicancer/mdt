@@ -3,18 +3,21 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   /* config options here */
   images: {
-    domains: ['172.16.7.55'],
+    domains: [
+      process.env.NEXT_PUBLIC_STRAPI_HOST || 'localhost',
+      process.env.NEXT_PUBLIC_STRAPI_BACKUP_HOST || 'localhost'
+    ],
     remotePatterns: [
       {
         protocol: 'http',
-        hostname: '172.16.69.13',
-        port: '1337',
+        hostname: process.env.NEXT_PUBLIC_STRAPI_BACKUP_HOST || 'localhost',
+        port: process.env.NEXT_PUBLIC_STRAPI_BACKUP_PORT || '1337',
         pathname: '/uploads/**',
       },
       {
         protocol: 'http',
-        hostname: '172.16.7.55',
-        port: '1337',
+        hostname: process.env.NEXT_PUBLIC_STRAPI_HOST || 'localhost',
+        port: process.env.NEXT_PUBLIC_STRAPI_PORT || '1337',
         pathname: '/uploads/**',
       },
     ],
@@ -32,14 +35,18 @@ const nextConfig: NextConfig = {
   },
   // 添加API代理，解决跨域问题
   async rewrites() {
+    const STRAPI_HOST = process.env.NEXT_PUBLIC_STRAPI_HOST || 'localhost';
+    const STRAPI_PORT = process.env.NEXT_PUBLIC_STRAPI_PORT || '1337';
+    const STRAPI_SERVER_ROOT = `http://${STRAPI_HOST}:${STRAPI_PORT}`;
+    
     return [
       {
         source: '/strapi-uploads/:path*',
-        destination: 'http://172.16.7.55:1337/uploads/:path*',
+        destination: `${STRAPI_SERVER_ROOT}/uploads/:path*`,
       },
       {
         source: '/strapi-images/:path*',
-        destination: 'http://172.16.7.55:1337/images/:path*',
+        destination: `${STRAPI_SERVER_ROOT}/images/:path*`,
       },
     ];
   },
