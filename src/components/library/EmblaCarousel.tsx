@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState, useRef } from 'react';
 import useEmblaCarousel from 'embla-carousel-react';
 import { WheelGesturesPlugin } from 'embla-carousel-wheel-gestures';
 import { IssueContent } from '@/types/issue';
@@ -15,6 +15,13 @@ interface EmblaCarouselProps {
   onIndexChange?: (index: number) => void;
 }
 
+// 添加底部提示文本
+const SwipeIndicator = () => (
+  <div className="absolute bottom-12 left-1/2 transform -translate-x-1/2 text-center w-full">
+    <p className="text-gray-500 text-sm">Swipe to select the vol you want to watch</p>
+  </div>
+);
+
 export function EmblaCarousel({
   items,
   className = "",
@@ -22,9 +29,10 @@ export function EmblaCarousel({
 }: EmblaCarouselProps) {
   // 配置项状态
   const [axis] = useState<Axis>('y'); // 垂直方向
-  const [skipSnaps] = useState(false);
+  const [skipSnaps] = useState(false); // 确保每次只切换一个slide
   const [forceWheelAxis] = useState<Axis | undefined>('y'); // 强制使用Y轴滚动
   const [target] = useState<Element | undefined>(undefined);
+  const slideRef = useRef<HTMLDivElement>(null);
   
   // 轮播状态
   const [activeIndex, setActiveIndex] = useState(0);
@@ -40,11 +48,14 @@ export function EmblaCarousel({
       axis,
       align: 'center',
       containScroll: 'trimSnaps',
+      dragFree: false, // 禁用惯性滚动
+      duration: 5, // 大幅减少滚动持续时间，使切换更快速
     },
     [
       WheelGesturesPlugin({
         forceWheelAxis,
         target,
+        wheelDraggingClass: 'is-wheel-dragging'
       })
     ]
   );
@@ -97,6 +108,31 @@ export function EmblaCarousel({
     };
   }, [emblaApi, onIndexChange]);
 
+  // 添加处理滚轮事件的函数，加快响应速度
+  useEffect(() => {
+    if (!emblaApi) return;
+    
+    const handleWheel = (event: WheelEvent) => {
+      // 阻止默认行为
+      event.preventDefault();
+      
+      // 根据滚轮方向决定滚动方向
+      if (event.deltaY > 0) {
+        emblaApi.scrollNext();
+      } else if (event.deltaY < 0) {
+        emblaApi.scrollPrev();
+      }
+    };
+    
+    // 获取viewport元素
+    const viewportElement = emblaApi.containerNode();
+    viewportElement.addEventListener('wheel', handleWheel, { passive: false });
+    
+    return () => {
+      viewportElement.removeEventListener('wheel', handleWheel);
+    };
+  }, [emblaApi]);
+
   return (
     <div className={`relative h-screen overflow-hidden ${className}`}>
       <div className="embla" data-axis={axis}>
@@ -110,7 +146,9 @@ export function EmblaCarousel({
               return (
                 <div 
                   key={item.id}
-                  className="embla__slide h-screen flex-shrink-0 relative"
+                  ref={index === activeIndex ? slideRef : undefined}
+                  className="embla__slide flex-shrink-0 relative"
+                  style={{ height: '50vh', maxHeight: '50vh' }}
                 >
                   <div className="embla__slide__inner h-full flex items-center justify-center">
                     <EmblaCascadeCard
@@ -129,7 +167,7 @@ export function EmblaCarousel({
           </div>
         </div>
         
-        <div className="embla__dots">
+        <div className="embla__dots absolute bottom-24 left-1/2 transform -translate-x-1/2 flex space-x-2">
           {scrollSnaps.map((_, index) => (
             <DotButton 
               key={index}
@@ -138,6 +176,8 @@ export function EmblaCarousel({
             />
           ))}
         </div>
+        
+        <SwipeIndicator />
         
         <PrevButton onClick={scrollPrev} enabled={prevBtnEnabled}>
           <span className="sr-only">上一期</span>

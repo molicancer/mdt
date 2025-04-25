@@ -173,10 +173,10 @@ export const BackgroundLayer: React.FC<BackgroundLayerProps> = React.memo(({
           initial="resting"
           animate={controls1}
             >
-          <Image src="/img/avatar-man.png" alt="Avatar 1" fill className="rounded-full object-cover" />
+          <Image src="/img/avatar-2.png" alt="Avatar 1" fill className="rounded-full object-cover" />
             </motion.div>
         {/* Typewriter text */}
-        <p className="absolute left-0 right-0 text-base font-newyork-large font-medium text-center pointer-events-none" style={textStyle}>
+        <p className="absolute left-0 right-0 text-base font-newyork-large font-medium text-center pointer-events-none text-black" style={textStyle}>
               {displayedText1} 
             </p>
           </motion.div>
@@ -195,10 +195,10 @@ export const BackgroundLayer: React.FC<BackgroundLayerProps> = React.memo(({
           initial="resting"
           animate={controls2}
             >
-          <Image src="/img/avatar-woman.png" alt="Avatar 2" fill className="rounded-full object-cover" />
+          <Image src="/img/avatar-1.png" alt="Avatar 2" fill className="rounded-full object-cover" />
             </motion.div>
         {/* Typewriter text */}
-        <p className="absolute left-0 right-0 text-base font-newyork-large font-medium text-center pointer-events-none" style={textStyle}>
+        <p className="absolute left-0 right-0 text-base font-newyork-large font-medium text-center pointer-events-none text-black" style={textStyle}>
               {displayedText2}
             </p>
           </motion.div>

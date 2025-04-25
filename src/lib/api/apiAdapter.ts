@@ -30,7 +30,7 @@ class StrapiApiAdapter {
       return issues.map((issue: StrapiIssueResponse) => {
         // 安全获取封面图片URL
         const relativeIconUrl = issue.cover_image?.url;
-        let absoluteIconUrl = '/default-icon.png'; // 默认图标
+        let absoluteIconUrl = '/img/default-issue.png'; // 默认图标
 
         if (relativeIconUrl) {
           // 处理图片URL

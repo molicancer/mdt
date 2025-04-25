@@ -3,9 +3,6 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   /* config options here */
   images: {
-    domains: [
-      process.env.NEXT_PUBLIC_STRAPI_HOST as string
-    ],
     remotePatterns: [
       {
         protocol: 'http',
@@ -26,7 +23,9 @@ const nextConfig: NextConfig = {
     optimizeCss: true,
     scrollRestoration: true,
   },
-  // 添加API代理，解决跨域问题
+  allowedDevOrigins: [
+    process.env.NEXT_PUBLIC_SERVER_IP
+  ].filter(Boolean) as string[],
   async rewrites() {
     const STRAPI_HOST = process.env.NEXT_PUBLIC_STRAPI_HOST;
     const STRAPI_PORT = process.env.NEXT_PUBLIC_STRAPI_PORT;

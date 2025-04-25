@@ -56,34 +56,36 @@ export function EmblaCascadeCard({
       }
   };
   
-  // 样式计算
+  // 样式计算 - 根据截图调整位置和不透明度
   let yOffset = "0%";
   let opacity = 1;
   let scale = 1;
   let zIndex = 30;
   
   if (position === -1) {
-    yOffset = "calc(-100% + 64px)"; // 上方卡片紧贴顶部，留64px边距
-    opacity = 0.7;
-    scale = 0.5;
+    yOffset = "calc(-100% + 100px)"; // 增加露出的部分
+    opacity = 0.3;
+    scale = 0.9;
     zIndex = 20;
   } else if (position === 1) {
-    yOffset = "calc(100% - 64px)"; // 下方卡片紧贴底部，留64px边距
-    opacity = 0.7;
-    scale = 0.5;
+    yOffset = "calc(100% - 100px)"; // 增加露出的部分
+    opacity = 0.3;
+    scale = 0.9;
     zIndex = 20;
   }
 
   const getTransition = () => {
     if (prefersReducedMotion) {
-      return { type: "tween" as const, duration: 0.3 };
+      return { type: "tween" as const, duration: 0.2 };
     }
     
     return {
       type: "spring" as const,
-      stiffness: 450,
-      damping: 30,
-      mass: 0.8,
+      stiffness: 500,
+      damping: 40,
+      mass: 0.5,
+      restDelta: 0.01,
+      restSpeed: 0.01,
     };
   };
 
@@ -113,17 +115,17 @@ export function EmblaCascadeCard({
       data-position={position}
       data-issue-number={issueNumber}
     >
-      <div className="flex flex-col items-center justify-center p-8">
+      <div className="flex flex-col items-center justify-center p-4">
         <div className="flex items-center justify-center w-full">
-          <div className="flex-none w-3xs text-[120px] text-right font-newyork-large">Vol</div>
+          <div className="flex-none text-[100px] text-right font-newyork-large text-gray-800 dark:text-gray-200">Vol</div>
           
           {imageUrl && (
-            <div ref={imageRef} className="flex-none -mx-4">
+            <div ref={imageRef} className="flex-none mx-4">
                 <Image 
                   src={imageUrl} 
                   alt={title}
-                  width={200}
-                  height={200}
+                  width={180}
+                  height={180}
                   className="dark:invert transition-all duration-300"
                   quality={85}
                   sizes="(max-width: 768px) 128px, 160px"
@@ -133,11 +135,11 @@ export function EmblaCascadeCard({
             </div>
           )}
           
-          <div className="flex-none w-3xs text-[120px] text-left font-newyork-large">{issueNumber}</div>
+          <div className="flex-none text-[100px] text-left font-newyork-large text-gray-800 dark:text-gray-200">{issueNumber}</div>
         </div>
         
         {inView && date && (
-          <p className="mt-6 mb-3 text-center text-sm text-[#545454]">
+          <p className="mt-4 mb-6 text-center text-sm text-gray-500">
             {locale === 'zh' ? `最新发布 ${formatDate(date)}` : `the latest ${formatDate(date)}`}
           </p>
         )}
@@ -147,12 +149,12 @@ export function EmblaCascadeCard({
             {topics.map((topic, index) => (
               <motion.p 
                 key={topic.id} 
-                className="text-lg font-newyork-large cursor-pointer"
+                className="text-lg font-newyork-large cursor-pointer text-gray-800 dark:text-gray-200"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ 
-                  delay: index * 0.1,
-                  duration: 0.5,
+                  delay: index * 0.05,
+                  duration: 0.3,
                   ease: "easeOut"
                 }}
               >

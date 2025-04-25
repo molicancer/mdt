@@ -1,56 +1,62 @@
 "use client";
 
-import React from 'react';
+import React, { PropsWithChildren } from 'react';
 
-interface ButtonProps {
-  onClick: () => void;
+interface ButtonPrevNextProps extends PropsWithChildren {
   enabled: boolean;
-  className?: string;
-  children?: React.ReactNode;
+  onClick: () => void;
 }
 
-export const DotButton: React.FC<{ selected: boolean; onClick: () => void }> = ({ selected, onClick }) => {
-  return (
-    <button
-      className={`embla__dot ${selected ? 'embla__dot--selected' : ''}`}
-      type="button"
-      onClick={onClick}
+interface DotButtonProps {
+  selected: boolean;
+  onClick: () => void;
+}
+
+export const PrevButton: React.FC<ButtonPrevNextProps> = ({ 
+  enabled, 
+  onClick, 
+  children 
+}) => (
+  <button
+    onClick={onClick}
+    className={`embla__button embla__button--prev ${!enabled ? 'embla__button--disabled' : ''}`}
+    disabled={!enabled}
+    type="button"
+  >
+    {children}
+  </button>
+);
+
+export const NextButton: React.FC<ButtonPrevNextProps> = ({ 
+  enabled, 
+  onClick, 
+  children 
+}) => (
+  <button
+    onClick={onClick}
+    className={`embla__button embla__button--next ${!enabled ? 'embla__button--disabled' : ''}`}
+    disabled={!enabled}
+    type="button"
+  >
+    {children}
+  </button>
+);
+
+export const DotButton: React.FC<DotButtonProps> = ({ 
+  selected, 
+  onClick 
+}) => (
+  <button
+    onClick={onClick}
+    className="relative transition-all duration-300 focus:outline-none"
+    type="button"
+  >
+    <span 
+      className={`block h-2 w-2 rounded-full transition-all duration-300 ${
+        selected 
+          ? 'bg-black dark:bg-white scale-125' 
+          : 'bg-gray-300 dark:bg-gray-700'
+      }`} 
     />
-  );
-};
-
-export const PrevButton: React.FC<ButtonProps> = ({ onClick, enabled, className, children }) => {
-  return (
-    <button
-      className={`absolute top-1/2 left-8 -translate-y-1/2 z-40 p-2 rounded-full bg-background/20 backdrop-blur-md transition-all
-        ${!enabled ? 'opacity-30 cursor-not-allowed' : 'hover:bg-background/30'} ${className || ''}`}
-      onClick={onClick}
-      disabled={!enabled}
-      aria-label="上一篇"
-    >
-      {children || (
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M15 18l-6-6 6-6" />
-        </svg>
-      )}
-    </button>
-  );
-};
-
-export const NextButton: React.FC<ButtonProps> = ({ onClick, enabled, className, children }) => {
-  return (
-    <button
-      className={`absolute top-1/2 right-8 -translate-y-1/2 z-40 p-2 rounded-full bg-background/20 backdrop-blur-md transition-all
-        ${!enabled ? 'opacity-30 cursor-not-allowed' : 'hover:bg-background/30'} ${className || ''}`}
-      onClick={onClick}
-      disabled={!enabled}
-      aria-label="下一篇"
-    >
-      {children || (
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M9 18l6-6-6-6" />
-        </svg>
-      )}
-    </button>
-  );
-}; 
+  </button>
+); 

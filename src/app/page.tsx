@@ -171,7 +171,7 @@ const Home = () => {
 
   return (
     <div className={`relative w-full ${isInInitialStage ? 'is-initial-stage' : 'is-content-stage'}`}>
-      <div ref={backgroundWrapperRef} className="fixed inset-0 body-background">
+      <div ref={backgroundWrapperRef} className="fixed inset-0 body-background dark:invert">
         <BackgroundLayer />
       </div>
       
