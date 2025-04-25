@@ -114,14 +114,10 @@ export function EmblaCarousel({
                 >
                   <div className="embla__slide__inner h-full flex items-center justify-center">
                     <EmblaCascadeCard
-                      id={item.id}
                       title={`第 ${item.number} 期`}
-                      content={item.title || `MDT 期刊 Vol.${item.number}`}
-                      color={`hsl(${(parseInt(String(item.id)) * 25) % 360}, 80%, 70%)`}
                       inView={position === 0}
                       position={position}
                       imageUrl={item.icon}
-                      subtitle={item.subtitle}
                       date={item.date}
                       number={item.number}
                       topics={position === 0 ? item.topics : undefined}
