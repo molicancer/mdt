@@ -18,9 +18,11 @@ export const Header = () => {
   return (
     <header className="w-full flex justify-between items-center p-12 fixed z-50">
       {/* 左侧Logo */}
-      <div className="w-24 h-10 relative dark:invert">
-        <Image src="/logo.svg" alt="MOMO DESIGN TEAM" fill /> 
-      </div>
+      <Link href="/" passHref>
+        <div className="w-24 h-10 relative dark:invert">
+          <Image src="/logo.svg" alt="MOMO DESIGN TEAM" fill /> 
+        </div>
+      </Link>
       
       {/* 右侧按钮 */}
       <div className="flex gap-3 justify-end">
