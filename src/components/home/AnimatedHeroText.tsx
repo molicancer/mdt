@@ -51,24 +51,6 @@ const AnimatedHeroText = () => {
       }
     );
 
-    // // 副标题动画 - 使用GSAP控制，确保在主标题动画后执行
-    // tl.fromTo(
-    //   ".subtitle-motion", // 选择器指向motion.div的类名
-    //   { // 初始状态
-    //     opacity: 0,
-    //     y: 100,
-    //     filter: 'blur(5px)'
-    //   },
-    //   { // 结束状态
-    //     opacity: 1,
-    //     y: 0,
-    //     filter: 'blur(0px)',
-    //     duration: 0.8,
-    //     ease: "easeInOut"
-    //   },
-    //   ">-0.5" // 相对于上一个动画结束前0.5秒开始，实现重叠效果
-    // );
-
     return () => {
       tl.kill();
     };

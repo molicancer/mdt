@@ -20,26 +20,6 @@ export function ModeToggle() {
         <Moon className="absolute rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
         <span className="sr-only">Toggle theme</span>
       </Button>
-      
-      {/* <DropdownMenu>
-        <DropdownMenuTrigger asChild className="ml-1">
-          <Button variant="outline" size="icon">
-            <span className="sr-only">Open theme menu</span>
-            <span className="text-xs">▼</span>
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="z-[1002]">
-          <DropdownMenuItem onClick={() => setTheme("light")}>
-            Light
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setTheme("dark")}>
-            Dark
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setTheme("system")}>
-            System
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu> */}
     </>
   )
 }
