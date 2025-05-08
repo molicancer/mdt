@@ -37,7 +37,7 @@ export function ScrollDownIndicator() {
           alt="Scroll Down"
           width={24}
           height={40}
-          className="object-contain"
+          className="object-contain dark:invert"
         />
       </motion.div>
       <p className="text-sm text-[#545454]">

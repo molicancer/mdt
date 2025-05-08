@@ -36,5 +36,7 @@ export interface CategoryWithArticles {
   id: number | string; // 'other' category uses string ID
   name: string;
   sortOrder: number;
+  icon?: string;       // 分类图标URL
+  emoji?: string;      // 分类emoji文本
   articles: import('@/lib/api/apiAdapter').ArticleDetail[]; // Import ArticleDetail type
 } 

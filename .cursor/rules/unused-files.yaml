@@ -1,0 +1,9 @@
+name: 检测可能废弃的文件
+description: 帮助识别可能未被使用的文件，如临时文件、备份文件等
+message: 发现可能废弃的文件：${match}，请考虑删除或重命名
+
+triggers:
+  - regex: .*\.(bak|temp|tmp|old)$
+    files: [".*"]
+    excludeFiles: ["node_modules/**", ".git/**"]
+    level: suggestion 

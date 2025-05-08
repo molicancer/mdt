@@ -4,5 +4,5 @@ message: 请使用bun而不是${match}，例如：bun install
 
 triggers:
   - regex: (npm|yarn|pnpm)
-    files: [".sh", ".md", ".json", ".js", ".jsx", ".ts", ".tsx"]
-    excludeFiles: ["node_modules/**"] 
+    files: [".sh", ".md", ".json", ".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs", ".mts", ".cts"]
+    excludeFiles: ["node_modules/**", "bun.lock"] 

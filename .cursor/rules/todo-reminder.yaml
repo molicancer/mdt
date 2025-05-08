@@ -1,0 +1,9 @@
+name: TODO和FIXME提醒
+description: 检测代码中的TODO和FIXME注释，提醒开发者处理
+message: 发现${match}注释，请考虑处理或更新
+
+triggers:
+  - regex: (TODO|FIXME|待处理|需修复)
+    files: [".js", ".jsx", ".ts", ".tsx", ".css", ".scss", ".html"]
+    excludeFiles: ["node_modules/**", ".git/**"]
+    level: suggestion 

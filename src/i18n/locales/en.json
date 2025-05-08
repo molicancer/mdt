@@ -1,7 +1,8 @@
 {
   "header": {
     "library": "Library",
-    "subscribe": "Subscribe"
+    "subscribe": "Subscribe",
+    "back": "Back to Home"
   },
   "home": {
     "biggestTopic": "✨ The biggest topic of Issue {issue_number}",
@@ -9,6 +10,7 @@
     "noArticles": "No articles available or failed to load",
     "readOriginal": "Read Original",
     "noLink": "No external link",
+    "goExperience": "Go experience",
     "heroTitle": {
       "design": "Design",
       "inspiration": "Inspiration"
@@ -18,7 +20,19 @@
       "weekly": "「 weekly news 」",
       "updated": "Updated once a Monday morning"
     },
-    "swipeDown": "Swipe down to browse weekly news"
+    "swipeDown": "Swipe down to browse weekly news",
+    "backToTop": "Back to article top",
+    "chapterMenu": "Chapter menu",
+    "chapters": "Chapters",
+    "noChapters": "No chapters available",
+    "refresh": "Refresh",
+    "refreshChapters": "Refresh chapter list",
+    "scanningForChapters": "Scanning for chapters..."
+  },
+  "subscribe": {
+    "title": "Subscribe",
+    "scanCode": "Scan the QR code",
+    "subscribeLatest": "to subscribe to the latest content"
   },
   "footer": {
     "watchPrevious": "Watch the Vol.",

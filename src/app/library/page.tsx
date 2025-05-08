@@ -488,16 +488,31 @@ export default function LibraryPage() {
         </motion.ul>
         
         {/* 当前滑动位置指示器 */}
-        <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col items-end gap-3">
+        <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col items-end hidden">
           {issues.map((_, index) => (
             <div 
-              key={index}
-              onClick={() => jumpToSlide(index)}
+              key={index} 
+              onClick={() => jumpToSlide(index)} 
+              className="cursor-pointer py-2"
+              onMouseEnter={(e) => {
+                const indicator = e.currentTarget.querySelector('div');
+                if (indicator) indicator.style.width = '32px';
+              }}
+              onMouseLeave={(e) => {
+                const indicator = e.currentTarget.querySelector('div');
+                if (indicator && index !== activeSlide) {
+                  indicator.style.width = '24px';
+                }
+              }}
+            >
+              <div
               className={cn(
-                "w-6 h-1 py-1 rounded-full transition-all duration-300 cursor-pointer hover:w-8",
-                index === activeSlide ? "bg-gray-600 dark:bg-gray-200 w-8" : "bg-gray-300 dark:bg-gray-600"
+                  "h-1.5 rounded-full transition-all duration-300",
+                  index === activeSlide ? "bg-gray-600 dark:bg-gray-200" : "bg-gray-300 dark:bg-gray-600"
               )}
-            />
+                style={{ width: index === activeSlide ? '32px' : '24px' }}
+              />
+            </div>
           ))}
         </div>
       </div>

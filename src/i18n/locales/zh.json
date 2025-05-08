@@ -1,7 +1,8 @@
 {
   "header": {
     "library": "过往期刊",
-    "subscribe": "联系我们"
+    "subscribe": "联系我们",
+    "back": "返回主页"
   },
   "home": {
     "biggestTopic": "✨ 第{issue_number}期最大的话题",
@@ -9,6 +10,7 @@
     "noArticles": "本期暂无文章或加载失败",
     "readOriginal": "阅读原文",
     "noLink": "无外部链接",
+    "goExperience": "去体验",
     "heroTitle": {
       "design": "设计",
       "inspiration": "前沿集录"
@@ -18,7 +20,19 @@
       "weekly": "「每周通讯」",
       "updated": "每周一早晨更新一次"
     },
-    "swipeDown": "向下滑动浏览每周新闻"
+    "swipeDown": "向下滑动浏览每周新闻",
+    "backToTop": "回到文章顶部",
+    "chapterMenu": "章节导航",
+    "chapters": "章节导航",
+    "noChapters": "暂无章节",
+    "refresh": "刷新",
+    "refreshChapters": "刷新章节列表",
+    "scanningForChapters": "正在扫描章节内容..."
+  },
+  "subscribe": {
+    "title": "订阅",
+    "scanCode": "扫描二维码",
+    "subscribeLatest": "订阅最新内容"
   },
   "footer": {
     "watchPrevious": "查看上一期",

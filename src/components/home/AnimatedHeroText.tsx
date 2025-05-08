@@ -75,7 +75,6 @@ const AnimatedHeroText = () => {
 
       {/* 副标题容器 - Framer Motion控制动画 */}
       <motion.div
-        // className="subtitle-motion w-full text-center mt-10" // 添加类名供GSAP选择
         className="w-full text-center mt-10"
         initial={{
           opacity: 0,
@@ -94,7 +93,7 @@ const AnimatedHeroText = () => {
         }}
         key={locale} // 添加key，确保语言切换时动画重新触发
       >
-        <p className="text-base text-[#545454] text-center relative">
+        <p className="text-base text-[#545454] text-center relative dark:invert">
           {t('home.heroSubtitle.share')}<span className="text-black">{t('home.heroSubtitle.weekly')}</span><br />
           {t('home.heroSubtitle.updated')}
         </p>

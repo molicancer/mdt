@@ -2,4 +2,7 @@ rules:
   - rules/package-manager.yaml
   - rules/lint-check.yaml
   - rules/chinese-comments.yaml
-  - rules/tailwind-classes.yaml 
+  - rules/tailwind-classes.yaml
+  - rules/unused-imports.yaml
+  - rules/unused-files.yaml
+  - rules/todo-reminder.yaml 

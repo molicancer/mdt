@@ -259,6 +259,8 @@ export interface Category {
   updatedAt: string;
   publishedAt: string;
   sort_order?: number;
+  icon?: string;     // 分类图标
+  emoji?: string;    // 分类表情
 }
 
 // Strapi响应接口定义
@@ -292,6 +294,8 @@ function organizeArticlesByCategory(
     id: cat.id,
     name: cat.name,
     sortOrder: cat.sort_order || 999,
+    icon: cat.icon,      // 添加icon字段
+    emoji: cat.emoji,    // 添加emoji字段
     articles: []
   }));
   
@@ -299,6 +303,7 @@ function organizeArticlesByCategory(
     id: "other",
     name: "🔮 未分类",
     sortOrder: 1000,
+    emoji: "🔮",       // 为未分类添加emoji
     articles: []
   };
   

@@ -54,8 +54,8 @@ export const useScrollSnapAnimation = ({
     
     // 滚动位置常量
     const scrollTopY = 0; 
-    // 目标滚动位置：让 header 大致在视口中间偏上一点的位置
-    const scrollContentY = headerEl.offsetTop - window.innerHeight * 0.4;
+    // 目标滚动位置：让封面图片垂直居中显示
+    const scrollContentY = headerEl.offsetTop - (window.innerHeight - headerEl.offsetHeight) / 2;
     // 目标滚动位置：文章区域
     const scrollArticlesY = articlesEl.offsetTop - 120;
 

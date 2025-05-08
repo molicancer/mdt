@@ -7,6 +7,7 @@ import { ScrollDownIndicator } from '@/components/home/ScrollDownIndicator';
 import { BlurMasks } from '@/components/home/BlurMasks';
 import { BackgroundLayer } from '@/components/home/BackgroundLayer';
 import { Footer } from '@/components/home/Footer';
+import { FloatingNavigation } from '@/components/home/FloatingNavigation';
 import { 
   getLatestIssue, 
   getIssueWithCategorizedArticles,
@@ -147,14 +148,19 @@ const Home = () => {
       const data = await getIssueWithCategorizedArticles(issueContent.documentId);
       setCategorizedArticles(data);
       
-      // 滚动到文章区域
-      if (articlesContainerRef.current) {
-        const scrollPosition = articlesContainerRef.current.offsetTop - 120;
-        window.scrollTo({
-          top: scrollPosition,
-          behavior: 'smooth'
-        });
-      }
+      // 延迟执行滚动，确保DOM已更新
+      setTimeout(() => {
+        if (articlesContainerRef.current) {
+          // 计算文章区域顶部的位置，与useScrollSnapAnimation钩子中定义的一致
+          const scrollPosition = articlesContainerRef.current.offsetTop - 120;
+          
+          // 滚动到文章区域顶部
+          window.scrollTo({
+            top: scrollPosition,
+            behavior: 'smooth'
+          });
+        }
+      }, 100);
     } catch (error) {
       console.error("切换期刊失败:", error);
       // 显示错误消息给用户
@@ -195,11 +201,6 @@ const Home = () => {
               width={200} 
               height={200} 
               className='dark:invert transition-all duration-300' 
-              priority={true}
-              quality={85}
-              sizes="(max-width: 768px) 150px, 200px"
-              placeholder="blur"
-              blurDataURL="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+P+/HgAFeAJ5jU3rHgAAAABJRU5ErkJggg=="
             />
           </div>
           <div ref={numberRef} className="flex-none w-3xs text-[120px] text-left font-newyork-large opacity-0">{currentContent.number.toString().padStart(2, '0')}</div>
@@ -221,7 +222,7 @@ const Home = () => {
 
         <div ref={fixedBgRef} className="w-full fixed left-0 top-0 h-30 z-11 bg-background opacity-0"></div>
 
-        <div ref={articlesContainerRef} className="w-full text-foreground z-10 relative mt-25 overflow-visible" style={{ willChange: 'transform' }}>
+        <div ref={articlesContainerRef} className="w-full text-foreground z-10 relative mt-20 overflow-visible" style={{ willChange: 'transform' }}>
           {isLoading || isLoadingDetails ? (
             <div className="text-center py-36">
               <div className="text-xl font-newyork-large">{t('home.loadingText')}</div>
@@ -230,23 +231,34 @@ const Home = () => {
             <div className="space-y-12">
               {categorizedArticles.map(category => (
                 <div key={category.id} className="mb-16">
-                  <h2 className="text-4xl font-bold font-newyork-large tracking-wider">
+                  <h2 className="text-2xl font-bold font-newyork-large tracking-wider text-center mb-15 flex items-center justify-center">
+                    {category.icon ? (
+                      <Image 
+                        src={category.icon} 
+                        alt={category.name} 
+                        width={28} 
+                        height={28} 
+                        className="mr-2 dark:invert"
+                      />
+                    ) : category.emoji ? (
+                      <span className="mr-2">{category.emoji}</span>
+                    ) : null}
                     {category.name}
                   </h2>
-                  <div className="space-y-6">
-                    {category.articles.map(article => (
+                  <div className="space-y-30">
+                    {category.articles.map((article, articleIndex) => (
                       <div key={article.documentId}>
-                        <h3 className="text-xl font-medium font-newyork-large">{article.title}</h3>
+                        <h3 id={`article-${category.id}-${articleIndex}`} className="text-4xl font-medium mb-10">{article.title}</h3>
                         {article.content && (
-                          <div className="text-base leading-[2.2] prose prose-sm prose-invert max-w-none" 
+                          <div className="text-base leading-[2.2] prose prose-sm prose-invert max-w-none [&_img]:my-10 [&_img]:w-full [&_img]:rounded-lg" 
                             dangerouslySetInnerHTML={{ __html: markdownToHtml(article.content) }} 
                           />
                         )}
-                        <div className="flex items-center">
+                        <div className="flex items-center [&>*:not(img)]:mt-10">
                           {article.link && (
                             <a href={article.link} target="_blank" rel="noopener noreferrer" className="flex items-center bg-gray-200/60 hover:bg-gray-200/40 rounded-full h-10 px-4 transition-colors">
                               <Image src="/icon/link.svg" alt={t('home.readOriginal')} width={20} height={20} />
-                              <span className="ml-1.5 text-sm text-foreground font-semibold">Lens Ai website</span>
+                              <span className="ml-1.5 text-sm text-foreground font-semibold">{t('home.goExperience')}</span>
                             </a>
                           )}
                         </div>
@@ -263,6 +275,9 @@ const Home = () => {
           )}
         </div>
       </div>
+      
+      {/* 添加悬浮导航组件 - 始终显示 */}
+      <FloatingNavigation articlesContainerRef={articlesContainerRef as React.RefObject<HTMLDivElement>} />
       
       <Footer 
         onSwitchIssue={handleSwitchIssue} 

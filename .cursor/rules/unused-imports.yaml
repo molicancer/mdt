@@ -1,0 +1,9 @@
+name: 检测未使用的导入
+description: 检测代码中可能存在的未使用导入
+message: 发现可能未使用的导入：${match}，建议删除或使用它
+
+triggers:
+  - regex: import\s+(?:\{\s*([^}]+)\s*\}|([^{}\s;]+))\s+from\s+['"].+['"];\s*(?=\n(?![^\n]*\1|\n[^\n]*\2))
+    files: [".js", ".jsx", ".ts", ".tsx"]
+    excludeFiles: ["node_modules/**"]
+    level: suggestion 

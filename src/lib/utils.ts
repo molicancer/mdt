@@ -66,8 +66,18 @@ export const markdownToHtml = (markdown: string): string => {
     // 使用 marked.parse 的同步方式
     const htmlContent = marked.parse(markdown, { async: false }) as string;
     
+    // 处理HTML中的h3标签，添加唯一ID
+    const processedHtml = htmlContent.replace(
+      /<h3>(.*?)<\/h3>/gi,
+      (match, content, index) => {
+        // 为h3添加ID，基于内容和索引
+        const id = `heading-${content.trim().toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-')}-${index}`;
+        return `<h3 id="${id}">${content}</h3>`;
+      }
+    );
+    
     // 处理HTML中的图片路径
-    return processStrapiRichTextImages(htmlContent);
+    return processStrapiRichTextImages(processedHtml);
   } catch (error) {
     console.error('Markdown 解析错误:', error);
     // 返回包含原始 Markdown 的错误信息，以便调试

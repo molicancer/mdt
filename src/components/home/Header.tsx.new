@@ -1,0 +1,142 @@
+'use client';
+
+import React, { useState } from 'react';
+import { ModeToggle } from "@/components/theme-toggle";
+import Image from "next/image";
+import { Button } from "../ui/button";
+import Link from 'next/link';
+import { useI18n } from '@/i18n';
+import { usePathname } from 'next/navigation';
+import { motion } from "framer-motion";
+
+export const Header = () => {
+  const { locale, setLocale, t } = useI18n();
+  const pathname = usePathname();
+  const isLibraryPage = pathname === '/library';
+  const [showQRCode, setShowQRCode] = useState(false);
+  
+  // 切换语言
+  const toggleLanguage = () => {
+    setLocale(locale === 'zh' ? 'en' : 'zh');
+  };
+
+  return (
+    <header className="w-full flex justify-between items-center p-12 fixed z-50">
+      {/* 左侧Logo */}
+      <Link href="/" passHref>
+        <div className="w-24 h-10 relative dark:invert">
+          <Image src="/logo.svg" alt="MOMO DESIGN TEAM" fill /> 
+        </div>
+      </Link>
+      
+      {/* 右侧按钮 */}
+      <div className="flex gap-3 justify-end items-center">
+        <Link href={isLibraryPage ? "/" : "/library"} passHref>
+          <Button variant="secondary" className="cursor-pointer rounded-full h-10 px-4.5 flex items-center gap-2">
+            <Image 
+              src={isLibraryPage ? "/icon/btn-back.svg" : "/icon/btn-library.svg"} 
+              alt={isLibraryPage ? "Back" : "Library"} 
+              width={20} 
+              height={20} 
+              className="object-contain dark:invert" 
+            />
+            {isLibraryPage ? t('header.back') : t('header.library')}
+          </Button>
+        </Link>
+        
+        <div style={{ position: 'relative', height: '40px', display: 'inline-block' }}>
+          <motion.div
+            className="absolute top-0 left-0 z-50"
+            initial="button"
+            animate={showQRCode ? "card" : "button"}
+            variants={{
+              button: {
+                width: "auto",
+                height: 40,
+                borderRadius: 20,
+              },
+              card: {
+                width: 320,
+                height: "auto",
+                borderRadius: 24,
+                x: -130,  // 向左偏移，使卡片居中
+              }
+            }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+            onMouseEnter={() => setShowQRCode(true)}
+            onMouseLeave={() => setShowQRCode(false)}
+          >
+            <motion.div
+              className="bg-primary text-primary-foreground cursor-pointer overflow-hidden flex flex-col items-center relative"
+              variants={{
+                button: {
+                  padding: "0 18px",
+                  height: 40,
+                  borderRadius: 20,
+                },
+                card: {
+                  padding: 24,
+                  height: "auto",
+                  borderRadius: 24,
+                }
+              }}
+              transition={{ duration: 0.3 }}
+            >
+              {/* 按钮文字 */}
+              <motion.div
+                className="flex items-center justify-center h-10 w-full whitespace-nowrap"
+                variants={{
+                  button: { opacity: 1, y: 0 },
+                  card: { opacity: 0, y: -20 }
+                }}
+                transition={{ duration: 0.2 }}
+              >
+                {t('header.subscribe')}
+              </motion.div>
+              
+              {/* 卡片内容 */}
+              <motion.div
+                className="flex flex-col items-center w-full"
+                variants={{
+                  button: { opacity: 0, scale: 0.8, height: 0 },
+                  card: { opacity: 1, scale: 1, height: "auto" }
+                }}
+                transition={{ duration: 0.3, delay: 0.1 }}
+              >
+                <h3 className="text-2xl font-semibold mb-4">{t('subscribe.title')}</h3>
+                <div className="bg-white p-2 rounded-xl mb-4">
+                  <Image 
+                    src="/qrcode-subscribe.png" 
+                    alt="Subscription QR Code" 
+                    width={200} 
+                    height={200} 
+                    className="rounded-md"
+                  />
+                </div>
+                <p className="text-center text-sm">
+                  {t('subscribe.scanCode')}<br />
+                  {t('subscribe.subscribeLatest')}
+                </p>
+              </motion.div>
+            </motion.div>
+          </motion.div>
+        </div>
+        
+        <ModeToggle />
+        <Button 
+          variant="secondary" 
+          className="cursor-pointer border-none rounded-full w-10 h-10 p-0 relative"
+          onClick={toggleLanguage}
+        >
+          <Image 
+            src={locale === 'zh' ? "/icon/btn-lang-en.svg" : "/icon/btn-lang-cn.svg"} 
+            alt="Switch language" 
+            width={20}
+            height={20}
+            className="dark:invert" 
+          />
+        </Button>
+      </div>
+    </header>
+  );
+}; 
