@@ -361,7 +361,7 @@ export default function LibraryPage() {
     <>
       <Header />
       <BlurMasks />
-      <ScrollDownIndicator />
+      {/* <ScrollDownIndicator /> */}
       <div className="h-screen w-full flex items-center justify-center px-6 relative overflow-hidden group">
         <motion.ul
           ref={containerRef}
@@ -461,7 +461,7 @@ export default function LibraryPage() {
                   <div className="w-full flex flex-col items-center">
                     {date && (
                       <p className="mt-4 mb-6 text-center text-sm text-gray-500">
-                        {locale === 'zh' ? `最新发布 ${formatDate(date)}` : `the latest ${formatDate(date)}`}
+                        {locale === 'zh' ? `${formatDate(date)} 发布` : `Published on ${formatDate(date)}`}
                       </p>
                     )}
                     

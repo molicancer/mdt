@@ -27,8 +27,6 @@ cp .env.example .env.local
 - `NEXT_PUBLIC_STRAPI_PORT`: Strapi CMS 服务器的端口
 - `NEXT_PUBLIC_STRAPI_API_URL`: Strapi API 的完整 URL
 - `NEXT_PUBLIC_STRAPI_SERVER_ROOT`: Strapi 服务器的根 URL
-- `NEXT_PUBLIC_STRAPI_BACKUP_HOST`: 备用 Strapi 服务器的主机地址
-- `NEXT_PUBLIC_STRAPI_BACKUP_PORT`: 备用 Strapi 服务器的端口
 
 ## 运行项目
 
@@ -46,13 +44,72 @@ bun run build
 
 # 启动生产服务器
 bun run start
+
+# 代码风格检查
+bun run lint
 ```
 
 ## 部署说明
 
-1. 确保在部署环境中设置了正确的环境变量
-2. 根据环境选择合适的 `.env` 文件
-3. 执行构建和启动命令
+### 准备工作
+
+1. 确保服务器已安装 Node.js (v18.0.0+) 和 Bun 包管理器
+2. 克隆代码仓库到服务器
+
+```bash
+git clone <仓库地址> mdt
+cd mdt
+```
+
+### 环境配置
+
+1. 根据部署环境创建对应的环境变量文件
+   ```bash
+   cp .env.example .env.production
+   ```
+
+2. 编辑 `.env.production` 文件，配置正确的 Strapi CMS 连接信息
+
+### 构建和启动
+
+1. 安装依赖包
+   ```bash
+   bun install
+   ```
+
+2. 构建项目
+   ```bash
+   bun run build
+   ```
+
+3. 启动服务
+   ```bash
+   # 直接启动
+   bun run start
+   
+   # 或使用PM2进行进程管理
+   pm2 start npm --name "mdt" -- start
+   ```
+
+4. 配置 Nginx 或其他反向代理服务器，将流量转发到应用端口
+
+### 自动化部署
+
+建议配置 CI/CD 流水线实现自动部署：
+
+1. 代码提交到主分支触发构建
+2. 自动运行代码质量检查 `bun run lint`
+3. 成功后自动构建和部署到服务器
+
+## 技术栈
+
+本项目基于以下技术构建：
+
+- [Next.js](https://nextjs.org) - React 框架
+- [Tailwind CSS](https://tailwindcss.com) - 样式系统
+- [shadcn/ui](https://ui.shadcn.com) - UI 组件库
+- [Strapi CMS](https://strapi.io) - 内容管理系统
+- [Bun](https://bun.sh) - JavaScript 运行时和包管理器
 
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 

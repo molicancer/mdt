@@ -301,7 +301,7 @@ function organizeArticlesByCategory(
   
   const otherCategory: CategoryWithArticles = {
     id: "other",
-    name: "🔮 未分类",
+    name: "未分类",
     sortOrder: 1000,
     emoji: "🔮",       // 为未分类添加emoji
     articles: []

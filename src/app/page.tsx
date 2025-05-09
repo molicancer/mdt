@@ -191,7 +191,7 @@ const Home = () => {
         <AnimatedHeroText />
       </div>
 
-      <div ref={contentContainerRef} className="max-w-5xl mx-auto mt-50">
+      <div ref={contentContainerRef} className="max-w-[850px] mx-auto mt-50">
         <div ref={issueHeaderRef} className="flex items-center justify-center sticky top-10 origin-top z-100">
           <div ref={volRef} className="flex-none w-3xs text-[120px] text-right font-newyork-large opacity-0">Vol</div>
           <div ref={coverRef} className="opacity-0 -mx-4">

@@ -5,7 +5,7 @@
     "back": "返回主页"
   },
   "home": {
-    "biggestTopic": "✨ 第{issue_number}期最大的话题",
+    "biggestTopic": "本期精彩内容",
     "loadingText": "加载中...",
     "noArticles": "本期暂无文章或加载失败",
     "readOriginal": "阅读原文",
@@ -13,14 +13,13 @@
     "goExperience": "去体验",
     "heroTitle": {
       "design": "设计",
-      "inspiration": "前沿集录"
+      "inspiration": "前沿资讯"
     },
     "heroSubtitle": {
-      "share": "分享最新的设计和人工智能咨询",
-      "weekly": "「每周通讯」",
-      "updated": "每周一早晨更新一次"
+      "share": "分享全球最新AI设计资讯和创意灵感",
+      "updated": "每周一10:00定时更新"
     },
-    "swipeDown": "向下滑动浏览每周新闻",
+    "swipeDown": "向下滑动浏览最新内容",
     "backToTop": "回到文章顶部",
     "chapterMenu": "章节导航",
     "chapters": "章节导航",
@@ -37,8 +36,8 @@
   "footer": {
     "watchPrevious": "查看上一期",
     "watchNext": "查看下一期",
-    "established": "已经成立3年",
-    "forDesigners": "为超过3000名设计师和设计爱好者服务",
-    "accumulation": "累计分享825条设计信息"
+    "established": "成立近3年",
+    "forDesigners": "为超过10000名设计师和设计爱好者服务",
+    "accumulation": "累计分享近1000条设计资讯"
   }
 } 
